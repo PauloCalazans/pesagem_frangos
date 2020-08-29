@@ -1,6 +1,6 @@
 # pesagem_frangos
 
-Calcular o Peso Médio a partir das balanças informadas. Salvar essa pesagem no BD. Seguir o padrão Clean Architecture.
+Calcular o Peso Médio a partir das balanças informadas.
 
 ## Getting Started
 
