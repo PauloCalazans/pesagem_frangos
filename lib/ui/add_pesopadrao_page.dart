@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pesagem_frangos/main.dart';
 import 'package:pesagem_frangos/util/util.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class AddPesopadraoPage extends StatefulWidget {
   @override
@@ -10,17 +10,15 @@ class AddPesopadraoPage extends StatefulWidget {
 
 class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
 
-  Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
-  SharedPreferences _mPrefs;
-
   List<DropdownMenuItem<String>> _listSexo = Util.sexo();
   TextEditingController _pesoPadraoController = TextEditingController();
   TextEditingController _pesoPadraoEditController = TextEditingController();
   String _sexoSelecionado = 'Macho';
 
-  List<String> _padraoMacho;
-  List<String> _padraoFemea;
+  late List<String> _padraoMacho;
+  late List<String> _padraoFemea;
   List<String> _listPesoPadrao = [];
+  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -34,8 +32,6 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
   }
 
   _doInit() async {
-    _mPrefs = await _prefs;
-
     _getListPesoPadrao();
     if(mounted) {
       setState(() { });
@@ -43,7 +39,7 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
   }
 
   _getListPesoPadrao() async {
-    var listPadrao = await Util.getListPesoPadrao(_sexoSelecionado, _mPrefs);
+    var listPadrao = await Util.getListPesoPadrao(_sexoSelecionado);
 
     setState(() {
       _listPesoPadrao = listPadrao;
@@ -51,21 +47,23 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
   }
 
   _addPeso(String peso) async {
-    if(_listPesoPadrao.length < 55) {
-      if(_sexoSelecionado == 'Macho') {
-        setState(() {
-          _padraoMacho = _listPesoPadrao;
-          _padraoMacho.add(peso);
-        });
+    if(_formKey.currentState!.validate() && int.tryParse(peso)! > 0) {
+      if (_listPesoPadrao.length < 55) {
+        if (_sexoSelecionado == 'Macho') {
+          setState(() {
+            _padraoMacho = _listPesoPadrao;
+            _padraoMacho.add(peso);
+          });
 
-        await _mPrefs.setStringList("padraoMacho", _padraoMacho);
-      } else if(_sexoSelecionado == 'Fêmea') {
-        setState(() {
-          _padraoFemea = _listPesoPadrao;
-          _padraoFemea.add(peso);
-        });
+          await mPrefs.setStringList("padraoMacho", _padraoMacho);
+        } else if (_sexoSelecionado == 'Fêmea') {
+          setState(() {
+            _padraoFemea = _listPesoPadrao;
+            _padraoFemea.add(peso);
+          });
 
-        await _mPrefs.setStringList("padraoFemea", _padraoFemea);
+          await mPrefs.setStringList("padraoFemea", _padraoFemea);
+        }
       }
     }
   }
@@ -78,14 +76,14 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
         _padraoMacho[index] = peso;
       });
 
-      await _mPrefs.setStringList("padraoMacho", _padraoMacho);
+      await mPrefs.setStringList("padraoMacho", _padraoMacho);
     } else if(_sexoSelecionado == 'Fêmea') {
       setState(() {
         _padraoFemea = _listPesoPadrao;
         _padraoFemea[index] = peso;
       });
 
-      await _mPrefs.setStringList("padraoFemea", _padraoFemea);
+      await mPrefs.setStringList("padraoFemea", _padraoFemea);
     }
   }
 
@@ -96,13 +94,13 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
         _padraoMacho.removeLast();
       });
 
-      await _mPrefs.setStringList("padraoMacho", _padraoMacho);
+      await mPrefs.setStringList("padraoMacho", _padraoMacho);
     } else if(_sexoSelecionado == 'Fêmea') {
       setState(() {
         _padraoFemea.removeLast();
       });
 
-      await _mPrefs.setStringList("padraoFemea", _padraoFemea);
+      await mPrefs.setStringList("padraoFemea", _padraoFemea);
     }
   }
 
@@ -131,9 +129,9 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
                   value: _sexoSelecionado,
                   isDense: true,
                   hint: Text("Selecione um sexo"),
-                  onChanged: (String selection) {
+                  onChanged: (String? selection) {
                     setState(() {
-                      _sexoSelecionado = selection;
+                      _sexoSelecionado = selection!;
                     });
 
                     _getListPesoPadrao();
@@ -150,17 +148,20 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
               children: [
 
                 Expanded(
-                  child: TextFormField(
-                    style: TextStyle(fontSize: 20),
-                    keyboardType: TextInputType.number,
-                    textInputAction: TextInputAction.next,
-                    validator: Util.validateForm,
-                    controller: _pesoPadraoController,
-                    decoration: InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Peso Padrão'
+                  child: Form(
+                    key: _formKey,
+                    child: TextFormField(
+                      style: TextStyle(fontSize: 20),
+                      keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.next,
+                      validator: Util.validateForm,
+                      controller: _pesoPadraoController,
+                      decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: 'Peso Padrão'
+                      ),
+                      onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                     ),
-                    onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   ),
                 ),
 
@@ -202,7 +203,7 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
 
           Expanded(
             child: ListView.builder(
-              itemCount: _listPesoPadrao != null ? _listPesoPadrao.length : 0,
+              itemCount: _listPesoPadrao.length,
               itemBuilder: (_, index) {
                 return Padding(
                   padding: const EdgeInsets.only(left: 8.0, right: 8.0),
@@ -241,7 +242,7 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
                                 children: [
 
                                 Container(
-                                  width: width * .40,
+                                  width: width * .35,
                                   child: TextFormField(
                                     style: TextStyle(fontSize: 20),
                                     keyboardType: TextInputType.number,
@@ -259,6 +260,7 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
                                 Padding(
                                   padding: const EdgeInsets.only(left: 4.0),
                                   child: Row(
+
                                     children: [
                                       IconButton(
                                         icon: Icon(Icons.add_circle),

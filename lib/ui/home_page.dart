@@ -4,7 +4,6 @@ import 'package:pesagem_frangos/models/peso_medio.dart';
 import 'package:pesagem_frangos/ui/add_pesopadrao_page.dart';
 import 'package:pesagem_frangos/util/util.dart';
 import 'package:pesagem_frangos/widgets/stepper_custom.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -13,11 +12,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
 
-  Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
-  SharedPreferences _mPrefs;
-
   int _currentStep = 0;
-  String _sexoSelecionado = 'Macho';
+  String? _sexoSelecionado = 'Macho';
   List<DropdownMenuItem<String>> _listSexo = Util.sexo();
   List<String> _listPesoPadrao = [];
 
@@ -44,8 +40,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   _doInit() async {
-    _mPrefs = await _prefs;
-
     _getListPesoPadrao();
     if(mounted) {
       setState(() { });
@@ -53,10 +47,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   _getListPesoPadrao() async {
-    var listPadrao = await Util.getListPesoPadrao(_sexoSelecionado, _mPrefs);
-    setState(() {
-      _listPesoPadrao = listPadrao;
-    });
+    _listPesoPadrao = await Util.getListPesoPadrao(_sexoSelecionado);
   }
 
   Widget _richText(String textBold, dynamic textNormal) {
@@ -81,40 +72,28 @@ class _HomePageState extends State<HomePage> {
   }
 
   _stepContinue() async {
-    if(_currentStep == 2) {
-
-      if(_formKey.currentState.validate()) {
+    if(_formKey.currentState!.validate()) {
+      if(_currentStep < 2)
+        setState(() {
+          _currentStep += 1;
+        });
+      else
         _calcularPeso();
-      } else {
-        await Util.showDialogAlert(
-          context: context,
-          title: 'Existem informações a serem preenchidas',
-          onConfirm: () => Navigator.pop(context),
-          onCancel: () => Navigator.pop(context),
-          titleConfirm: 'Ok',
-          titleCancel: 'Fechar'
-        );
-      }
     }
-
-    if(_currentStep < 2)
-      setState(() {
-        _currentStep += 1;
-    });
   }
 
   _calcularPeso() {
     FocusScope.of(context).requestFocus(new FocusNode()); // fecha o teclado
 
     PesoMedio vo = new PesoMedio(
-        idade: int.tryParse(_idadeController.text),
-        pesoPadrao: int.tryParse(_pesoPadraoController.text),
-        avesAlojadas: int.tryParse(_avesAlojadasController.text),
-        mortalidade: int.tryParse(_mortalidadeController.text),
-        racaoRecebida: int.tryParse(_racaoController.text),
-        estoqueRacao: int.tryParse(_estoqueController.text),
-        tara: int.tryParse(_taraController.text),
-        avesPesadas: int.tryParse(_avesPesadasController.text),
+        idade: int.parse(_idadeController.text),
+        pesoPadrao: int.parse(_pesoPadraoController.text),
+        avesAlojadas: int.parse(_avesAlojadasController.text),
+        mortalidade: int.parse(_mortalidadeController.text),
+        racaoRecebida: int.parse(_racaoController.text),
+        estoqueRacao: int.parse(_estoqueController.text),
+        tara: int.tryParse(_taraController.text) ?? 0,
+        avesPesadas: int.parse(_avesPesadasController.text),
         balancas: _balancasController.text.split('\n')
     );
 
@@ -210,6 +189,15 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  _setPesoPadrao(String? value) {
+    var idade = int.tryParse(value ?? "");
+    if(idade != null && idade < _listPesoPadrao.length) {
+      _pesoPadraoController.value = TextEditingValue(text: _listPesoPadrao[idade]);
+    } else {
+      _pesoPadraoController.clear();
+    }
+  }
+
   Future<bool> _willPopScope() async {
     bool close = false;
     await Util.showDialogAlert(
@@ -271,12 +259,13 @@ class _HomePageState extends State<HomePage> {
                             value: _sexoSelecionado,
                             isDense: true,
                             hint: Text("Selecione um sexo"),
-                            onChanged: (String selection) {
+                            onChanged: (String? selection) {
                               setState(() {
                                 _sexoSelecionado = selection;
+                                _getListPesoPadrao();
                               });
 
-                              _getListPesoPadrao();
+                              Future.delayed(Duration(milliseconds: 100)).then((value) => _setPesoPadrao(_idadeController.text));
                             },
                             items: _listSexo,
                           ),
@@ -296,14 +285,7 @@ class _HomePageState extends State<HomePage> {
                           labelText: 'Idade',
                           border: OutlineInputBorder(),
                         ),
-                        onChanged: (String value) {
-                          var idade = int.tryParse(value);
-                          if(idade <= _listPesoPadrao.length) {
-                            print(_listPesoPadrao[idade]);
-                            _pesoPadraoController.value = TextEditingValue(text: _listPesoPadrao[idade]);
-                          }
-                          print(idade);
-                        },
+                        onChanged: _setPesoPadrao,
                         onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                       ),
                     ),
@@ -402,7 +384,6 @@ class _HomePageState extends State<HomePage> {
                         style: TextStyle(fontSize: 20),
                         keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.next,
-                        validator: Util.validateForm,
                         controller: _taraController,
                         onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                         decoration: InputDecoration(

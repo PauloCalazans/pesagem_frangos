@@ -1,88 +1,79 @@
 class PesoMedio {
+  late double gmd;
+  late double pesoMedio;
+  late double porcentagem;
+  late double ca;
+  late int consumo;
+  late int pesoTotal;
+  late int balancadas; // quantas balanças foram digitadas
+  late int desconto;
+  late int avesVivas;
+
   int idade;
   int avesPesadas;
   int avesAlojadas;
-  double gmd;
-  int mortalidade;
-  double pesoMedio;
   int pesoPadrao;
-  double porcentagem;
-  double ca;
-  int consumo;
   int racaoRecebida;
   int estoqueRacao;
   int tara;
-  int pesoTotal;
-  int balancadas; // quantas balanças foram digitadas
   List<String> balancas;
-  int desconto;
-  int avesVivas;
+  int mortalidade;
 
   PesoMedio(
-      {this.idade,
-      this.avesPesadas,
-      this.avesAlojadas,
-      this.pesoPadrao,
-      this.racaoRecebida,
-      this.estoqueRacao,
-      this.tara,
-      this.balancas,
-      this.mortalidade});
+      {required this.idade,
+      required this.avesPesadas,
+      required this.avesAlojadas,
+      required this.pesoPadrao,
+      required this.racaoRecebida,
+      required this.estoqueRacao,
+      required this.tara,
+      required this.balancas,
+      required this.mortalidade});
 
-  int contarBalancas() {
+  contarBalancas() {
     balancadas = 0;
     balancas.forEach((it) {
-      if(it.isNotEmpty && int.tryParse(it) > 0) {
+      if(it.isNotEmpty && int.tryParse(it)! > 0) {
         balancadas++;
       }
     });
-    return balancadas;
   }
 
-  int calcularDesconto() {
+  calcularDesconto() {
     desconto = tara * balancadas;
-    return desconto;
   }
 
-  int somarPesoBalancas() {
+  somarPesoBalancas() {
     pesoTotal = 0;
     balancas.forEach((peso) {
       if(peso.isNotEmpty) {
-        pesoTotal += int.tryParse(peso);
+        pesoTotal += int.tryParse(peso)!;
       }
     });
-
-    return pesoTotal;
   }
 
-  double calcularPesoMedio() {
+  calcularPesoMedio() {
     pesoMedio = (pesoTotal-desconto) / avesPesadas;
-    return pesoMedio;
   }
 
-  double calcularGmd() {
+  calcularGmd() {
     gmd = pesoMedio / idade;
-    return gmd;
   }
 
-  int calcularConsumo() {
+  calcularConsumo() {
     consumo = racaoRecebida - estoqueRacao;
-    return consumo;
   }
 
-  double calcularConversao() {
+  calcularConversao() {
     ca = consumo / ((pesoMedio * avesVivas)/1000);
-    return ca;
   }
 
-  double calcularPorcentagem() {
+  calcularPorcentagem() {
     porcentagem = (pesoMedio / pesoPadrao) * 100;
-    return porcentagem;
   }
 
-  int calcularAvesVivas() {
+  calcularAvesVivas() {
     avesVivas = avesAlojadas - mortalidade;
-    return avesVivas;
   }
 
   calcular() {
