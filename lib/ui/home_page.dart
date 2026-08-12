@@ -11,8 +11,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
   int _currentStep = 0;
+  bool _canPop = false;
   String? _sexoSelecionado = 'Macho';
   List<DropdownMenuItem<String>> _listSexo = Util.sexo();
   List<String> _listPesoPadrao = [];
@@ -30,7 +30,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-   _doInit();
+    _doInit();
     super.initState();
   }
 
@@ -41,8 +41,8 @@ class _HomePageState extends State<HomePage> {
 
   _doInit() async {
     _getListPesoPadrao();
-    if(mounted) {
-      setState(() { });
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -57,23 +57,30 @@ class _HomePageState extends State<HomePage> {
         children: [
           RichText(
             text: TextSpan(
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Colors.black),
-                children: [
-                  TextSpan(text: "${textBold}: ", style: TextStyle(fontWeight: FontWeight.w500)),
-                  TextSpan(text: "${textNormal}"),
-                ]
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w400,
+                color: Colors.black,
+              ),
+              children: [
+                TextSpan(
+                  text: "${textBold}: ",
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+                TextSpan(text: "${textNormal}"),
+              ],
             ),
           ),
 
-          SizedBox(height: 4)
+          SizedBox(height: 4),
         ],
       ),
     );
   }
 
   _stepContinue() async {
-    if(_formKey.currentState!.validate()) {
-      if(_currentStep < 2)
+    if (_formKey.currentState!.validate()) {
+      if (_currentStep < 2)
         setState(() {
           _currentStep += 1;
         });
@@ -86,21 +93,26 @@ class _HomePageState extends State<HomePage> {
     FocusScope.of(context).requestFocus(new FocusNode()); // fecha o teclado
 
     PesoMedio vo = new PesoMedio(
-        idade: int.parse(_idadeController.text),
-        pesoPadrao: int.parse(_pesoPadraoController.text),
-        avesAlojadas: int.parse(_avesAlojadasController.text),
-        mortalidade: int.parse(_mortalidadeController.text),
-        racaoRecebida: int.parse(_racaoController.text),
-        estoqueRacao: int.parse(_estoqueController.text),
-        tara: int.tryParse(_taraController.text) ?? 0,
-        avesPesadas: int.parse(_avesPesadasController.text),
-        balancas: _balancasController.text.split('\n')
+      idade: int.parse(_idadeController.text),
+      pesoPadrao: int.parse(_pesoPadraoController.text),
+      avesAlojadas: int.parse(_avesAlojadasController.text),
+      mortalidade: int.parse(_mortalidadeController.text),
+      racaoRecebida: int.parse(_racaoController.text),
+      estoqueRacao: int.parse(_estoqueController.text),
+      tara: int.tryParse(_taraController.text) ?? 0,
+      avesPesadas: int.parse(_avesPesadasController.text),
+      balancas: _balancasController.text.split('\n'),
     );
 
     vo.calcular();
 
     showModalBottomSheet(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
       context: context,
       isDismissible: true,
       isScrollControlled: true,
@@ -112,13 +124,12 @@ class _HomePageState extends State<HomePage> {
           minChildSize: 0.3,
           maxChildSize: 0.96,
           expand: false,
-          builder: (context, scrollController){
+          builder: (context, scrollController) {
             return Column(
               mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment:MainAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 Align(
                   alignment: Alignment.topCenter,
                   child: Column(
@@ -130,15 +141,22 @@ class _HomePageState extends State<HomePage> {
                           width: 40,
                           height: 6,
                           decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(10)
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                       ),
 
                       SizedBox(height: 10),
 
-                      Text('Resultado dos Cálculos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400, color: Colors.black))
+                      Text(
+                        'Resultado dos Cálculos',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.black,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -152,30 +170,40 @@ class _HomePageState extends State<HomePage> {
                   child: ListView(
                     controller: scrollController,
                     children: [
-
                       Column(
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-
                           _richText("Idade", '${vo.idade} dias'),
                           _richText("AvesAlojadas", vo.avesAlojadas),
                           _richText("Peso Total", '${vo.pesoTotal} g'),
                           _richText("Tara Balaça", '${vo.tara} g'),
                           _richText("Desconto Total", '${vo.desconto} g'),
                           _richText("Balançadas", vo.balancadas),
-                          _richText("Média das Balanças", '${Util.nf().format((vo.pesoTotal-vo.desconto)/vo.balancadas)} g'),
+                          _richText(
+                            "Média das Balanças",
+                            '${Util.nf().format((vo.pesoTotal - vo.desconto) / vo.balancadas)} g',
+                          ),
                           _richText("Aves Pesadas", vo.avesPesadas),
-                          _richText("Peso Médio", '${Util.nf().format(vo.pesoMedio)} g'),
+                          _richText(
+                            "Peso Médio",
+                            '${Util.nf().format(vo.pesoMedio)} g',
+                          ),
                           _richText("Peso Padrão", '${vo.pesoPadrao} g'),
-                          _richText("Porcentagem", '${Util.nf().format(vo.porcentagem)} %'),
+                          _richText(
+                            "Porcentagem",
+                            '${Util.nf().format(vo.porcentagem)} %',
+                          ),
                           _richText("GMD", '${Util.nf().format(vo.gmd)} g'),
                           _richText("Ração Recebida", '${vo.racaoRecebida} Kg'),
                           _richText("Estoque", '${vo.estoqueRacao} Kg'),
                           _richText("Consumo Ração", '${vo.consumo} Kg'),
                           _richText("Mortalidade", vo.mortalidade),
                           _richText("Aves Vivas", vo.avesVivas),
-                          _richText("Convesão Alimentar", Util.nfCa().format(vo.ca)),
+                          _richText(
+                            "Convesão Alimentar",
+                            Util.nfCa().format(vo.ca),
+                          ),
                         ],
                       ),
                     ],
@@ -185,46 +213,61 @@ class _HomePageState extends State<HomePage> {
             );
           },
         );
-      }
+      },
     );
   }
 
   _setPesoPadrao(String? value) {
     var idade = int.tryParse(value ?? "");
-    if(idade != null && idade < _listPesoPadrao.length) {
-      _pesoPadraoController.value = TextEditingValue(text: _listPesoPadrao[idade]);
+    if (idade != null && idade < _listPesoPadrao.length) {
+      _pesoPadraoController.value = TextEditingValue(
+        text: _listPesoPadrao[idade],
+      );
     } else {
       _pesoPadraoController.clear();
     }
   }
 
-  Future<bool> _willPopScope() async {
+  Future<bool> _confirmExit() async {
     bool close = false;
     await Util.showDialogAlert(
-        context: context,
-        title: 'Deseja Sair do Aplicativo',
-        onConfirm: () {
-              close = true;
-              Navigator.pop(context);
-            },
-        onCancel: () => Navigator.pop(context)
-          );
+      context: context,
+      title: 'Deseja Sair do Aplicativo',
+      onConfirm: () {
+        close = true;
+        Navigator.pop(context);
+      },
+      onCancel: () => Navigator.pop(context),
+    );
 
     return close;
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _willPopScope,
+    return PopScope(
+      canPop: _canPop,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop || !await _confirmExit() || !mounted) {
+          return;
+        }
+
+        setState(() {
+          _canPop = true;
+        });
+        Navigator.of(context).pop(result);
+      },
       child: Scaffold(
         appBar: AppBar(
           title: Text('Pesagem'),
           actions: [
             IconButton(
               icon: Icon(Icons.mode_edit, size: 32),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddPesopadraoPage())),
-            )
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => AddPesopadraoPage()),
+              ),
+            ),
           ],
         ),
         body: Form(
@@ -233,7 +276,7 @@ class _HomePageState extends State<HomePage> {
             currentStep: _currentStep,
             onStepContinue: _stepContinue,
             onStepCancel: () {
-              if(_currentStep >= 1) {
+              if (_currentStep >= 1) {
                 setState(() {
                   _currentStep -= 1;
                 });
@@ -251,7 +294,7 @@ class _HomePageState extends State<HomePage> {
                         decoration: InputDecoration(
                           labelStyle: TextStyle(fontSize: 20),
                           labelText: "Sexo",
-                          border: OutlineInputBorder()
+                          border: OutlineInputBorder(),
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
@@ -265,7 +308,10 @@ class _HomePageState extends State<HomePage> {
                                 _getListPesoPadrao();
                               });
 
-                              Future.delayed(Duration(milliseconds: 100)).then((value) => _setPesoPadrao(_idadeController.text));
+                              Future.delayed(Duration(milliseconds: 100)).then(
+                                (value) =>
+                                    _setPesoPadrao(_idadeController.text),
+                              );
                             },
                             items: _listSexo,
                           ),
@@ -286,7 +332,8 @@ class _HomePageState extends State<HomePage> {
                           border: OutlineInputBorder(),
                         ),
                         onChanged: _setPesoPadrao,
-                        onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                        onFieldSubmitted: (_) =>
+                            FocusScope.of(context).nextFocus(),
                       ),
                     ),
 
@@ -299,10 +346,11 @@ class _HomePageState extends State<HomePage> {
                         validator: Util.validateForm,
                         controller: _pesoPadraoController,
                         decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Peso Padrão'
+                          border: OutlineInputBorder(),
+                          labelText: 'Peso Padrão',
                         ),
-                        onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                        onFieldSubmitted: (_) =>
+                            FocusScope.of(context).nextFocus(),
                       ),
                     ),
 
@@ -315,10 +363,11 @@ class _HomePageState extends State<HomePage> {
                         validator: Util.validateForm,
                         controller: _avesAlojadasController,
                         decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Aves Alojadas'
+                          border: OutlineInputBorder(),
+                          labelText: 'Aves Alojadas',
                         ),
-                        onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                        onFieldSubmitted: (_) =>
+                            FocusScope.of(context).nextFocus(),
                       ),
                     ),
 
@@ -331,14 +380,14 @@ class _HomePageState extends State<HomePage> {
                         validator: Util.validateForm,
                         controller: _mortalidadeController,
                         decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Mortalidade'
+                          border: OutlineInputBorder(),
+                          labelText: 'Mortalidade',
                         ),
                         onFieldSubmitted: (_) => _stepContinue(),
                       ),
                     ),
                   ],
-                )
+                ),
               ),
 
               StepCustom(
@@ -355,10 +404,11 @@ class _HomePageState extends State<HomePage> {
                         validator: Util.validateForm,
                         controller: _racaoController,
                         decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Ração Recebida'
+                          border: OutlineInputBorder(),
+                          labelText: 'Ração Recebida',
                         ),
-                        onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                        onFieldSubmitted: (_) =>
+                            FocusScope.of(context).nextFocus(),
                       ),
                     ),
 
@@ -370,10 +420,11 @@ class _HomePageState extends State<HomePage> {
                         textInputAction: TextInputAction.next,
                         validator: Util.validateForm,
                         controller: _estoqueController,
-                        onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                        onFieldSubmitted: (_) =>
+                            FocusScope.of(context).nextFocus(),
                         decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Estoque de Hoje'
+                          border: OutlineInputBorder(),
+                          labelText: 'Estoque de Hoje',
                         ),
                       ),
                     ),
@@ -385,10 +436,11 @@ class _HomePageState extends State<HomePage> {
                         keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.next,
                         controller: _taraController,
-                        onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                        onFieldSubmitted: (_) =>
+                            FocusScope.of(context).nextFocus(),
                         decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Tara Balança'
+                          border: OutlineInputBorder(),
+                          labelText: 'Tara Balança',
                         ),
                       ),
                     ),
@@ -400,13 +452,13 @@ class _HomePageState extends State<HomePage> {
                       controller: _avesPesadasController,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(),
-                        labelText: 'Aves Pesadas'
+                        labelText: 'Aves Pesadas',
                       ),
                       validator: Util.validateForm,
                       onFieldSubmitted: (_) => _stepContinue(),
                     ),
                   ],
-                )
+                ),
               ),
 
               StepCustom(
@@ -422,18 +474,18 @@ class _HomePageState extends State<HomePage> {
                     validator: Util.validateForm,
                     controller: _balancasController,
                     inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9\n]'))
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9\n]')),
                     ],
                     decoration: InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Balanças'
+                      border: OutlineInputBorder(),
+                      labelText: 'Balanças',
                     ),
                   ),
-                )
+                ),
               ),
             ],
           ),
-        )
+        ),
       ),
     );
   }

@@ -1,48 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
-enum StepStateCustom {
-  indexed,
-  editing,
-  complete,
-  disabled,
-  error,
-}
+enum StepStateCustom { indexed, editing, complete, disabled, error }
 
-enum StepperTypeCustom {
-  vertical,
-  horizontal,
-}
+enum StepperTypeCustom { vertical, horizontal }
 
 @immutable
 class StepCustom {
-
   const StepCustom({
     required this.content,
     this.state = StepStateCustom.indexed,
-  }) : assert(content != null),
-        assert(state != null);
+  });
 
   final Widget content;
 
   final StepStateCustom state;
-
 }
 
 class StepperCustom extends StatefulWidget {
-  StepperCustom({
-    Key? key,
+  const StepperCustom({
+    super.key,
     required this.steps,
     this.currentStep = 0,
     this.onStepTapped,
     this.onStepContinue,
     this.onStepCancel,
     this.backgroundColor,
-    this.progressColor
-  }) : assert(steps != null),
-        assert(currentStep != null),
-        assert(0 <= currentStep && currentStep < steps.length),
-        super(key: key);
+    this.progressColor,
+  }) : assert(0 <= currentStep && currentStep < steps.length);
 
   final List<StepCustom> steps;
 
@@ -62,7 +46,7 @@ class StepperCustom extends StatefulWidget {
   _StepperCustomState createState() => _StepperCustomState();
 }
 
-class _StepperCustomState extends State<StepperCustom> with TickerProviderStateMixin {
+class _StepperCustomState extends State<StepperCustom> {
   final Map<int, StepStateCustom> _oldStates = <int, StepStateCustom>{};
   final GlobalKey<ScaffoldState> _mScaffoldState = GlobalKey<ScaffoldState>();
 
@@ -85,6 +69,11 @@ class _StepperCustomState extends State<StepperCustom> with TickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final surfaceColor = theme.colorScheme.surface;
+    final buttonTextColor = theme.textTheme.labelLarge?.color;
+    final bodyTextStyle = theme.textTheme.bodyMedium;
+
     return Scaffold(
       key: _mScaffoldState,
       body: Column(
@@ -93,7 +82,6 @@ class _StepperCustomState extends State<StepperCustom> with TickerProviderStateM
             child: AnimatedSize(
               curve: Curves.fastOutSlowIn,
               duration: kThemeAnimationDuration,
-              vsync: this,
               child: widget.steps[widget.currentStep].content,
             ),
           ),
@@ -101,17 +89,12 @@ class _StepperCustomState extends State<StepperCustom> with TickerProviderStateM
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).backgroundColor,
-              spreadRadius: 3.0,
-            )
-          ],
+          boxShadow: [BoxShadow(color: surfaceColor, spreadRadius: 3.0)],
         ),
         child: BottomAppBar(
-          color: Theme.of(context).backgroundColor,
+          color: surfaceColor,
           child: Container(
-            color: widget.backgroundColor ?? Theme.of(context).backgroundColor,
+            color: widget.backgroundColor ?? surfaceColor,
             margin: const EdgeInsets.all(0),
             child: ConstrainedBox(
               constraints: const BoxConstraints.tightFor(height: 48.0),
@@ -119,7 +102,6 @@ class _StepperCustomState extends State<StepperCustom> with TickerProviderStateM
                 mainAxisSize: MainAxisSize.max,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-
                   Expanded(
                     flex: 1,
                     child: Align(
@@ -128,41 +110,47 @@ class _StepperCustomState extends State<StepperCustom> with TickerProviderStateM
                         child: TextButton(
                           onPressed: widget.onStepCancel,
                           style: TextButton.styleFrom(
-                            textStyle: TextStyle(
-                              color: Theme.of(context).textTheme.button!.color
-                            ),
+                            foregroundColor: buttonTextColor,
                           ),
-                          child: Text("VOLTAR", style: Theme.of(context).textTheme.bodyText2),
+                          child: Text("VOLTAR", style: bodyTextStyle),
                         ),
                       ),
                     ),
                   ),
-
 
                   Expanded(
                     flex: 1,
                     child: Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                          onPressed: widget.onStepContinue,
-                          style: TextButton.styleFrom(
-                            backgroundColor: widget.backgroundColor ?? Theme.of(context).backgroundColor,
-                            textStyle: TextStyle(
-                              color: widget.currentStep == widget.steps.length - 1 ? widget.progressColor ?? Theme.of(context).primaryColor : Theme.of(context).textTheme.button!.color,
-                            )
+                        onPressed: widget.onStepContinue,
+                        style: TextButton.styleFrom(
+                          backgroundColor:
+                              widget.backgroundColor ?? surfaceColor,
+                          foregroundColor:
+                              widget.currentStep == widget.steps.length - 1
+                              ? widget.progressColor ?? theme.primaryColor
+                              : buttonTextColor,
+                        ),
+                        child: Visibility(
+                          visible:
+                              widget.currentStep == widget.steps.length - 1,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              Icon(Icons.done, size: 20, color: Colors.black),
+                              SizedBox(width: 4),
+                              Text(
+                                "CALCULAR",
+                                style: bodyTextStyle?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
                           ),
-                          child: Visibility(
-                            visible: widget.currentStep == widget.steps.length - 1,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                Icon(Icons.done, size: 20, color: Colors.black),
-                                SizedBox(width: 4),
-                                Text("CALCULAR", style: Theme.of(context).textTheme.bodyText2!.copyWith(fontWeight: FontWeight.bold, color: Colors.black))
-                              ],
-                            ),
-                            replacement: Text("AVANÇAR", style: Theme.of(context).textTheme.bodyText2),
-                          )
+                          replacement: Text("AVANÇAR", style: bodyTextStyle),
+                        ),
                       ),
                     ),
                   ),
@@ -173,6 +161,5 @@ class _StepperCustomState extends State<StepperCustom> with TickerProviderStateM
         ),
       ),
     );
-
   }
 }

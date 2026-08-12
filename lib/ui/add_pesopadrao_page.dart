@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pesagem_frangos/main.dart';
 import 'package:pesagem_frangos/util/util.dart';
@@ -9,7 +8,6 @@ class AddPesopadraoPage extends StatefulWidget {
 }
 
 class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
-
   List<DropdownMenuItem<String>> _listSexo = Util.sexo();
   TextEditingController _pesoPadraoController = TextEditingController();
   TextEditingController _pesoPadraoEditController = TextEditingController();
@@ -33,8 +31,8 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
 
   _doInit() async {
     _getListPesoPadrao();
-    if(mounted) {
-      setState(() { });
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -47,7 +45,7 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
   }
 
   _addPeso(String peso) async {
-    if(_formKey.currentState!.validate() && int.tryParse(peso)! > 0) {
+    if (_formKey.currentState!.validate() && int.tryParse(peso)! > 0) {
       if (_listPesoPadrao.length < 55) {
         if (_sexoSelecionado == 'Macho') {
           setState(() {
@@ -69,15 +67,14 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
   }
 
   _editPeso(String peso, int index) async {
-
-    if(_sexoSelecionado == 'Macho') {
+    if (_sexoSelecionado == 'Macho') {
       setState(() {
         _padraoMacho = _listPesoPadrao;
         _padraoMacho[index] = peso;
       });
 
       await mPrefs.setStringList("padraoMacho", _padraoMacho);
-    } else if(_sexoSelecionado == 'Fêmea') {
+    } else if (_sexoSelecionado == 'Fêmea') {
       setState(() {
         _padraoFemea = _listPesoPadrao;
         _padraoFemea[index] = peso;
@@ -88,14 +85,13 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
   }
 
   _removePeso() async {
-
-    if(_sexoSelecionado == 'Macho') {
+    if (_sexoSelecionado == 'Macho') {
       setState(() {
         _padraoMacho.removeLast();
       });
 
       await mPrefs.setStringList("padraoMacho", _padraoMacho);
-    } else if(_sexoSelecionado == 'Fêmea') {
+    } else if (_sexoSelecionado == 'Fêmea') {
       setState(() {
         _padraoFemea.removeLast();
       });
@@ -110,18 +106,16 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
     final double height = MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Peso Padrão'),
-      ),
+      appBar: AppBar(title: Text('Peso Padrão')),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: InputDecorator(
               decoration: InputDecoration(
-                  labelStyle: TextStyle(fontSize: 20),
-                  labelText: "Sexo",
-                  border: OutlineInputBorder()
+                labelStyle: TextStyle(fontSize: 20),
+                labelText: "Sexo",
+                border: OutlineInputBorder(),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
@@ -146,7 +140,6 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
             padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
             child: Row(
               children: [
-
                 Expanded(
                   child: Form(
                     key: _formKey,
@@ -157,10 +150,11 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
                       validator: Util.validateForm,
                       controller: _pesoPadraoController,
                       decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          labelText: 'Peso Padrão'
+                        border: OutlineInputBorder(),
+                        labelText: 'Peso Padrão',
                       ),
-                      onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                      onFieldSubmitted: (_) =>
+                          FocusScope.of(context).nextFocus(),
                     ),
                   ),
                 ),
@@ -168,14 +162,14 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
                 Padding(
                   padding: const EdgeInsets.only(left: 8.0, right: 8.0),
                   child: IconButton(
-                    icon: Icon(Icons.add_circle, size: 30,),
+                    icon: Icon(Icons.add_circle, size: 30),
                     onPressed: () {
                       _addPeso(_pesoPadraoController.text);
 
                       _pesoPadraoController.value = TextEditingValue(text: '');
                     },
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -184,17 +178,29 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
             padding: const EdgeInsets.only(left: 8.0, right: 8.0),
             child: Container(
               height: 40,
-              decoration: BoxDecoration(
-                  border: Border.all()
-              ),
+              decoration: BoxDecoration(border: Border.all()),
               child: Center(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   mainAxisSize: MainAxisSize.max,
                   children: [
-                    Text('Idade', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Colors.black)),
-                    Text('Peso Padrão', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Colors.black))
+                    Text(
+                      'Idade',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.black,
+                      ),
+                    ),
+                    Text(
+                      'Peso Padrão',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.black,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -213,7 +219,11 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
                         Container(
                           height: 30,
                           decoration: BoxDecoration(
-                            border: Border(bottom: BorderSide(), left: BorderSide(), right: BorderSide())
+                            border: Border(
+                              bottom: BorderSide(),
+                              left: BorderSide(),
+                              right: BorderSide(),
+                            ),
                           ),
                           child: Center(
                             child: Row(
@@ -221,8 +231,22 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               mainAxisSize: MainAxisSize.max,
                               children: [
-                                Text('$index', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: Colors.black)),
-                                Text('${_listPesoPadrao[index]}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: Colors.black)),
+                                Text(
+                                  '$index',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                Text(
+                                  '${_listPesoPadrao[index]}',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.black,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -230,17 +254,23 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
                       ],
                     ),
                     onLongPress: () async {
-                      _pesoPadraoEditController.value = TextEditingValue(text: _listPesoPadrao[index]);
+                      _pesoPadraoEditController.value = TextEditingValue(
+                        text: _listPesoPadrao[index],
+                      );
                       await showMenu(
                         context: context,
-                        position: RelativeRect.fromLTRB(width * .1, height * .45, width * .1, height * .25),
+                        position: RelativeRect.fromLTRB(
+                          width * .1,
+                          height * .45,
+                          width * .1,
+                          height * .25,
+                        ),
                         items: [
                           PopupMenuItem<String>(
-                              value: 'Editar',
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-
+                            value: 'Editar',
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
                                 Container(
                                   width: width * .35,
                                   child: TextFormField(
@@ -250,23 +280,27 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
                                     validator: Util.validateForm,
                                     controller: _pesoPadraoEditController,
                                     decoration: InputDecoration(
-                                        border: OutlineInputBorder(),
-                                        labelText: 'Peso Padrão'
+                                      border: OutlineInputBorder(),
+                                      labelText: 'Peso Padrão',
                                     ),
-                                    onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                                    onFieldSubmitted: (_) =>
+                                        FocusScope.of(context).nextFocus(),
                                   ),
                                 ),
 
                                 Padding(
                                   padding: const EdgeInsets.only(left: 4.0),
                                   child: Row(
-
                                     children: [
                                       IconButton(
                                         icon: Icon(Icons.add_circle),
                                         onPressed: () {
-                                          _editPeso(_pesoPadraoEditController.text, index);
-                                          _pesoPadraoEditController.value = TextEditingValue(text: '');
+                                          _editPeso(
+                                            _pesoPadraoEditController.text,
+                                            index,
+                                          );
+                                          _pesoPadraoEditController.value =
+                                              TextEditingValue(text: '');
                                           Navigator.pop(context);
                                         },
                                       ),
@@ -274,44 +308,56 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
                                       IconButton(
                                         icon: Icon(Icons.delete_forever),
                                         onPressed: () {
-                                          if(_sexoSelecionado != 'Misto') {
+                                          if (_sexoSelecionado != 'Misto') {
                                             Util.showDialogAlert(
                                               context: context,
-                                              title: 'Remover o último peso registrado?',
+                                              title:
+                                                  'Remover o último peso registrado?',
                                               onConfirm: () {
-                                                Navigator.pop(context); // fechar dialog
-                                                Navigator.pop(context); // fechar menu popup
+                                                Navigator.pop(
+                                                  context,
+                                                ); // fechar dialog
+                                                Navigator.pop(
+                                                  context,
+                                                ); // fechar menu popup
                                                 _removePeso();
                                               },
                                               onCancel: () {
-                                                Navigator.pop(context); // fechar dialog
-                                                Navigator.pop(context); // fechar menu popup
-                                              }
+                                                Navigator.pop(
+                                                  context,
+                                                ); // fechar dialog
+                                                Navigator.pop(
+                                                  context,
+                                                ); // fechar menu popup
+                                              },
                                             );
                                           } else {
                                             Util.showDialogAlert(
                                               context: context,
-                                              title: 'O Padrão do Misto é calculado a partir dos outros',
-                                              onConfirm: () => Navigator.pop(context),
-                                              onCancel: () => Navigator.pop(context),
+                                              title:
+                                                  'O Padrão do Misto é calculado a partir dos outros',
+                                              onConfirm: () =>
+                                                  Navigator.pop(context),
+                                              onCancel: () =>
+                                                  Navigator.pop(context),
                                             );
                                           }
                                         },
-                                      )
+                                      ),
                                     ],
                                   ),
-                                )
+                                ),
                               ],
                             ),
-                          )
-                        ]
+                          ),
+                        ],
                       );
                     },
                   ),
                 );
               },
             ),
-          )
+          ),
         ],
       ),
     );
