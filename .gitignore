@@ -30,6 +30,9 @@
 .pub-cache/
 .pub/
 /build/
+.superpowers/
+.worktrees/
+**/Flutter/ephemeral/
 
 # Web related
 lib/generated_plugin_registrant.dart
