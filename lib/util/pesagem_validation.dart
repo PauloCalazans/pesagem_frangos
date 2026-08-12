@@ -52,14 +52,14 @@ class PesagemValidation {
 
   static String? validateBalancas(String? value) {
     final lines = (value ?? '').split('\n').map((line) => line.trim());
+    if (lines.any((line) => line.isNotEmpty && int.tryParse(line) == null)) {
+      return 'Use somente números, uma pesagem por linha';
+    }
     final valid = lines
         .map(int.tryParse)
         .whereType<int>()
         .where((weight) => weight > 0);
     if (valid.isEmpty) return 'Informe ao menos uma pesagem válida';
-    if (lines.any((line) => line.isNotEmpty && int.tryParse(line) == null)) {
-      return 'Use somente números, uma pesagem por linha';
-    }
     return null;
   }
 }
