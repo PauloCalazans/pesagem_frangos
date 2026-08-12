@@ -38,6 +38,63 @@ class PesoMedio {
       .whereType<int>()
       .where((peso) => peso > 0);
 
+  void validarEntradas() {
+    if (idade <= 0) {
+      throw ArgumentError.value(idade, 'idade', 'deve ser maior que zero');
+    }
+    if (avesPesadas <= 0) {
+      throw ArgumentError.value(
+        avesPesadas,
+        'avesPesadas',
+        'deve ser maior que zero',
+      );
+    }
+    if (avesAlojadas <= 0) {
+      throw ArgumentError.value(
+        avesAlojadas,
+        'avesAlojadas',
+        'deve ser maior que zero',
+      );
+    }
+    if (pesoPadrao <= 0) {
+      throw ArgumentError.value(
+        pesoPadrao,
+        'pesoPadrao',
+        'deve ser maior que zero',
+      );
+    }
+  }
+
+  void validarBalancas() {
+    if (balancadas == 0) {
+      throw ArgumentError.value(
+        balancas,
+        'balancas',
+        'deve conter ao menos uma leitura positiva',
+      );
+    }
+  }
+
+  void validarPesoMedio() {
+    if (!pesoMedio.isFinite || pesoMedio <= 0) {
+      throw ArgumentError.value(
+        tara,
+        'tara',
+        'não pode resultar em peso médio não positivo',
+      );
+    }
+  }
+
+  void validarAvesVivas() {
+    if (avesVivas <= 0) {
+      throw ArgumentError.value(
+        mortalidade,
+        'mortalidade',
+        'deve deixar ao menos uma ave viva',
+      );
+    }
+  }
+
   contarBalancas() {
     balancadas = _pesosValidos.length;
   }
@@ -86,14 +143,18 @@ class PesoMedio {
   }
 
   calcular() {
+    validarEntradas();
     contarBalancas();
+    validarBalancas();
     calcularDesconto();
     somarPesoBalancas();
     calcularPesoMedio();
+    validarPesoMedio();
     calcularDiferencaPeso();
     calcularGmd();
     calcularConsumo();
     calcularAvesVivas();
+    validarAvesVivas();
     calcularViabilidade();
     calcularConversao();
     calcularPorcentagem();
