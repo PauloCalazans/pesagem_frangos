@@ -4,8 +4,14 @@ import 'package:pesagem_frangos/util/util.dart';
 
 enum _PadraoAction { editar, excluir }
 
+typedef LoadPesos = Future<List<String>> Function(String sexo);
+typedef SavePesos = Future<bool> Function(String key, List<String> pesos);
+
 class AddPesopadraoPage extends StatefulWidget {
-  const AddPesopadraoPage({super.key});
+  const AddPesopadraoPage({super.key, this.loadPesos, this.savePesos});
+
+  final LoadPesos? loadPesos;
+  final SavePesos? savePesos;
 
   @override
   State<AddPesopadraoPage> createState() => _AddPesopadraoPageState();
@@ -17,6 +23,8 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
   final _pesoPadraoEditController = TextEditingController();
   String _sexoSelecionado = 'Macho';
   List<String> _listPesoPadrao = [];
+  int _loadRequest = 0;
+  bool _isSaving = false;
 
   bool get _isDerivedStandard => _sexoSelecionado == 'Misto';
 
@@ -35,8 +43,12 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
 
   Future<void> _getListPesoPadrao() async {
     final sexo = _sexoSelecionado;
-    final listPadrao = await Util.getListPesoPadrao(sexo);
-    if (!mounted || sexo != _sexoSelecionado) return;
+    final request = ++_loadRequest;
+    final listPadrao =
+        await (widget.loadPesos?.call(sexo) ?? Util.getListPesoPadrao(sexo));
+    if (!mounted || request != _loadRequest || sexo != _sexoSelecionado) {
+      return;
+    }
     setState(() => _listPesoPadrao = List<String>.from(listPadrao));
   }
 
@@ -52,41 +64,60 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
     return null;
   }
 
-  Future<void> _saveList(List<String> updatedList) async {
+  Future<bool> _saveList(List<String> updatedList) async {
+    if (_isSaving) return false;
     final sexo = _sexoSelecionado;
     final preferenceKey = switch (sexo) {
       'Macho' => 'padraoMacho',
       'Fêmea' => 'padraoFemea',
       _ => null,
     };
-    if (preferenceKey == null) return;
-    await mPrefs.setStringList(preferenceKey, updatedList);
-    if (!mounted || sexo != _sexoSelecionado) return;
+    if (preferenceKey == null) return false;
+
+    setState(() => _isSaving = true);
+    var saved = false;
+    try {
+      saved =
+          await (widget.savePesos?.call(preferenceKey, updatedList) ??
+              mPrefs.setStringList(preferenceKey, updatedList));
+    } catch (_) {
+      saved = false;
+    }
+
+    if (!mounted) return saved;
+    setState(() => _isSaving = false);
+    if (!saved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível salvar o padrão')),
+      );
+      return false;
+    }
+    if (sexo != _sexoSelecionado) return true;
     setState(() => _listPesoPadrao = updatedList);
+    return true;
   }
 
   Future<void> _addPeso() async {
-    if (_isDerivedStandard || !_formKey.currentState!.validate()) return;
+    if (_isSaving || _isDerivedStandard || !_formKey.currentState!.validate()) {
+      return;
+    }
     if (_listPesoPadrao.length >= 55) return;
     final peso = _pesoPadraoController.text.trim();
-    await _saveList([..._listPesoPadrao, peso]);
-    if (!mounted) return;
+    final saved = await _saveList([..._listPesoPadrao, peso]);
+    if (!mounted || !saved) return;
     _pesoPadraoController.clear();
   }
 
-  Future<void> _editPeso(String peso, int index) async {
-    if (_isDerivedStandard || index >= _listPesoPadrao.length) return;
-    final updatedList = List<String>.from(_listPesoPadrao)..[index] = peso;
-    await _saveList(updatedList);
-  }
-
   Future<void> _removePeso(int index) async {
-    if (_isDerivedStandard || index >= _listPesoPadrao.length) return;
+    if (_isSaving || _isDerivedStandard || index >= _listPesoPadrao.length) {
+      return;
+    }
     final updatedList = List<String>.from(_listPesoPadrao)..removeAt(index);
     await _saveList(updatedList);
   }
 
   void _handleRowAction(_PadraoAction action, int index) {
+    if (_isSaving) return;
     if (_isDerivedStandard) {
       _showMixedStandardMessage();
       return;
@@ -142,7 +173,11 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
           FilledButton(
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
-              await _editPeso(_pesoPadraoEditController.text.trim(), index);
+              final saved = await _saveList(
+                List<String>.from(_listPesoPadrao)
+                  ..[index] = _pesoPadraoEditController.text.trim(),
+              );
+              if (!saved) return;
               if (!dialogContext.mounted) return;
               Navigator.of(dialogContext).pop();
             },
@@ -190,7 +225,7 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
                 initialValue: _sexoSelecionado,
                 decoration: const InputDecoration(labelText: 'Sexo'),
                 items: Util.sexo(),
-                onChanged: _selectSexo,
+                onChanged: _isSaving ? null : _selectSexo,
               ),
             ),
             Padding(
@@ -203,7 +238,7 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
                       child: TextFormField(
                         key: const Key('novoPesoPadraoField'),
                         controller: _pesoPadraoController,
-                        enabled: !_isDerivedStandard,
+                        enabled: !_isDerivedStandard && !_isSaving,
                         keyboardType: TextInputType.number,
                         validator: _validatePositiveWeight,
                         decoration: const InputDecoration(
@@ -214,7 +249,9 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
                     ),
                     const SizedBox(width: 12),
                     FilledButton(
-                      onPressed: _isDerivedStandard ? null : _addPeso,
+                      onPressed: _isDerivedStandard || _isSaving
+                          ? null
+                          : _addPeso,
                       child: const Text('Adicionar'),
                     ),
                   ],
@@ -242,34 +279,38 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
               ),
             ),
             Expanded(
-              child: ListView.builder(
-                itemCount: _listPesoPadrao.length,
-                itemBuilder: (context, index) => ListTile(
-                  leading: CircleAvatar(child: Text('$index')),
-                  title: Text('${_listPesoPadrao[index]} g'),
-                  subtitle: Text('Idade $index dias'),
-                  trailing: PopupMenuButton<_PadraoAction>(
-                    tooltip: 'Ações da idade $index',
-                    onSelected: (action) => _handleRowAction(action, index),
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(
-                        value: _PadraoAction.editar,
-                        child: ListTile(
-                          leading: Icon(Icons.edit_outlined),
-                          title: Text('Editar'),
+              child: _listPesoPadrao.isEmpty
+                  ? const Center(child: Text('Nenhum padrão cadastrado'))
+                  : ListView.builder(
+                      itemCount: _listPesoPadrao.length,
+                      itemBuilder: (context, index) => ListTile(
+                        leading: CircleAvatar(child: Text('$index')),
+                        title: Text('${_listPesoPadrao[index]} g'),
+                        subtitle: Text('Idade $index dias'),
+                        trailing: PopupMenuButton<_PadraoAction>(
+                          tooltip: 'Ações da idade $index',
+                          onSelected: _isSaving
+                              ? null
+                              : (action) => _handleRowAction(action, index),
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(
+                              value: _PadraoAction.editar,
+                              child: ListTile(
+                                leading: Icon(Icons.edit_outlined),
+                                title: Text('Editar'),
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: _PadraoAction.excluir,
+                              child: ListTile(
+                                leading: Icon(Icons.delete_outline),
+                                title: Text('Excluir'),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      PopupMenuItem(
-                        value: _PadraoAction.excluir,
-                        child: ListTile(
-                          leading: Icon(Icons.delete_outline),
-                          title: Text('Excluir'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+                    ),
             ),
           ],
         ),
