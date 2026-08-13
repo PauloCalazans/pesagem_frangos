@@ -5,6 +5,7 @@ import 'package:pesagem_frangos/ui/pesagem/balancas_step.dart';
 import 'package:pesagem_frangos/ui/pesagem/consumo_step.dart';
 import 'package:pesagem_frangos/ui/pesagem/lote_step.dart';
 import 'package:pesagem_frangos/ui/pesagem/pesagem_form_controllers.dart';
+import 'package:pesagem_frangos/ui/resultado_page.dart';
 import 'package:pesagem_frangos/util/util.dart';
 import 'package:pesagem_frangos/widgets/pesagem_bottom_actions.dart';
 import 'package:pesagem_frangos/widgets/pesagem_progress_header.dart';
@@ -123,7 +124,7 @@ class _HomePageState extends State<HomePage> {
     if (_currentStep > 0) setState(() => _currentStep--);
   }
 
-  void _calculateAndOpenResult() {
+  Future<void> _calculateAndOpenResult() async {
     FocusScope.of(context).unfocus();
     late final PesoMedio resultado;
     try {
@@ -150,61 +151,24 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.8,
-        minChildSize: 0.3,
-        maxChildSize: 0.96,
-        expand: false,
-        builder: (context, scrollController) => ListView(
-          controller: scrollController,
-          padding: const EdgeInsets.all(24),
-          children: [
-            Text(
-              'Resultado dos Cálculos',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const Divider(),
-            _resultRow('Idade', '${resultado.idade} dias'),
-            _resultRow('Aves Alojadas', '${resultado.avesAlojadas}'),
-            _resultRow('Peso Total', '${resultado.pesoTotal} g'),
-            _resultRow('Tara Balança', '${resultado.tara} g'),
-            _resultRow('Desconto Total', '${resultado.desconto} g'),
-            _resultRow('Balançadas', '${resultado.balancadas}'),
-            _resultRow(
-              'Média das Balanças',
-              '${Util.nf().format((resultado.pesoTotal - resultado.desconto) / resultado.balancadas)} g',
-            ),
-            _resultRow('Aves Pesadas', '${resultado.avesPesadas}'),
-            _resultRow(
-              'Peso médio',
-              '${Util.nf().format(resultado.pesoMedio)} g',
-            ),
-            _resultRow('Peso padrão', '${resultado.pesoPadrao} g'),
-            _resultRow(
-              'Porcentagem',
-              '${Util.nf().format(resultado.porcentagem)} %',
-            ),
-            _resultRow('GMD', '${Util.nf().format(resultado.gmd)} g'),
-            _resultRow('Ração Recebida', '${resultado.racaoRecebida} kg'),
-            _resultRow('Estoque', '${resultado.estoqueRacao} kg'),
-            _resultRow('Consumo ração', '${resultado.consumo} kg'),
-            _resultRow('Mortalidade', '${resultado.mortalidade}'),
-            _resultRow('Aves vivas', '${resultado.avesVivas}'),
-            _resultRow('Conversão alimentar', Util.nfCa().format(resultado.ca)),
-          ],
-        ),
-      ),
+    final action = await Navigator.of(context).push<ResultadoAction>(
+      MaterialPageRoute(builder: (_) => ResultadoPage(resultado: resultado)),
     );
-  }
-
-  Widget _resultRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Text('$label: $value'),
-    );
+    if (!mounted || action != ResultadoAction.novaPesagem) return;
+    for (final controller in [
+      _controllers.idade,
+      _controllers.pesoPadrao,
+      _controllers.avesAlojadas,
+      _controllers.mortalidade,
+      _controllers.racaoRecebida,
+      _controllers.estoque,
+      _controllers.tara,
+      _controllers.avesPesadas,
+      _controllers.balancas,
+    ]) {
+      controller.clear();
+    }
+    setState(() => _currentStep = 0);
   }
 
   Future<bool> _confirmExit() async {

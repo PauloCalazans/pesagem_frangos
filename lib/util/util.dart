@@ -48,13 +48,19 @@ class Util {
     return value!.isEmpty ? 'Informe um valor!' : null;
   }
 
-  static NumberFormat nf() {
-    return new NumberFormat("###.00", 'pt');
+  static String formatDecimal(double value, {int decimals = 1}) {
+    final pattern = switch (decimals) {
+      0 => '#,##0',
+      1 => '#,##0.0',
+      2 => '#,##0.00',
+      3 => '#,##0.000',
+      _ => throw ArgumentError.value(decimals, 'decimals', 'Use 0, 1, 2 ou 3'),
+    };
+    return NumberFormat(pattern, 'pt_BR').format(value);
   }
 
-  static NumberFormat nfCa() {
-    return new NumberFormat("##0.000", 'pt');
-  }
+  static String formatInteger(num value) =>
+      NumberFormat.decimalPattern('pt_BR').format(value);
 
   static Future<List<String>> getListPesoPadrao(String? sexo) async {
     try {

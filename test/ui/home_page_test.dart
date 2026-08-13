@@ -172,7 +172,9 @@ void main() {
     );
   });
 
-  testWidgets('keeps the existing calculation result details', (tester) async {
+  testWidgets('shows the result page and preserves form data on back', (
+    tester,
+  ) async {
     await pumpPesagemApp(tester);
     await fillValidLote(tester);
     await tester.tap(find.text('Continuar'));
@@ -184,17 +186,24 @@ void main() {
     await tester.tap(find.text('Calcular'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Resultado dos Cálculos'), findsOneWidget);
-    expect(find.textContaining('Peso Total'), findsOneWidget);
-    expect(find.textContaining('Média das Balanças'), findsOneWidget);
+    expect(find.text('Resultado'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.textContaining('Mortalidade'),
+      find.text('Detalhes da pesagem'),
       300,
-      scrollable: find.byType(Scrollable).last,
+      scrollable: find.byType(Scrollable).first,
     );
-    expect(find.textContaining('Mortalidade'), findsOneWidget);
+    await tester.tap(find.text('Detalhes da pesagem'));
+    await tester.pumpAndSettle();
+    expect(find.text('Peso total'), findsOneWidget);
+    expect(find.text('Média das balanças'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Plantel e alimentação'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Plantel e alimentação'), findsOneWidget);
 
-    Navigator.of(tester.element(find.text('Resultado dos Cálculos'))).pop();
+    Navigator.of(tester.element(find.text('Resultado'))).pop();
     await tester.pumpAndSettle();
     await tester.tap(find.text('Voltar'));
     await tester.pumpAndSettle();
@@ -222,7 +231,7 @@ void main() {
     await tester.tap(find.text('Calcular'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Resultado dos Cálculos'), findsOneWidget);
+    expect(find.text('Resultado'), findsOneWidget);
   });
 
   testWidgets('handles a rapid continue and back without a key conflict', (
