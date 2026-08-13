@@ -18,6 +18,7 @@ class ResultDetailsSection extends StatelessWidget {
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
+        internalAddSemanticForOnTap: true,
         initiallyExpanded: initiallyExpanded,
         title: Text(title),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),

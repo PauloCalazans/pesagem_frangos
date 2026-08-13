@@ -69,6 +69,7 @@ void main() {
   });
 
   testWidgets('expands weighing audit details', (tester) async {
+    final semantics = tester.ensureSemantics();
     await tester.pumpWidget(
       MaterialApp(
         home: ResultadoPage(
@@ -83,7 +84,12 @@ void main() {
       300,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.bySemanticsLabel('Detalhes da pesagem'), findsOneWidget);
+    final expander = find.bySemanticsLabel('Detalhes da pesagem');
+    expect(expander, findsOneWidget);
+    expect(
+      tester.getSemantics(expander),
+      isSemantics(label: 'Detalhes da pesagem', isButton: true),
+    );
     await tester.tap(find.text('Detalhes da pesagem'));
     await tester.pumpAndSettle();
 
@@ -91,6 +97,7 @@ void main() {
     expect(find.text('Desconto da tara'), findsOneWidget);
     expect(find.text('Média das balanças'), findsOneWidget);
     expect(find.text('Balanças consideradas'), findsOneWidget);
+    semantics.dispose();
   });
 
   testWidgets('system back preserves the entered age in HomePage', (
