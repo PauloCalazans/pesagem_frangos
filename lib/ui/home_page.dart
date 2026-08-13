@@ -10,6 +10,8 @@ import 'package:pesagem_frangos/util/util.dart';
 import 'package:pesagem_frangos/widgets/pesagem_bottom_actions.dart';
 import 'package:pesagem_frangos/widgets/pesagem_progress_header.dart';
 
+enum _HomeMenuAction { padroesPeso }
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -214,15 +216,27 @@ class _HomePageState extends State<HomePage> {
         appBar: AppBar(
           title: const Text('Nova pesagem'),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.mode_edit, size: 28),
-              onPressed: () async {
-                await Navigator.push(
-                  context,
+            PopupMenuButton<_HomeMenuAction>(
+              tooltip: 'Mais opções',
+              onSelected: (action) async {
+                if (action != _HomeMenuAction.padroesPeso) return;
+                await Navigator.of(context).push<void>(
                   MaterialPageRoute(builder: (_) => AddPesopadraoPage()),
                 );
-                if (mounted) await _loadPesosPadrao();
+                if (!mounted) return;
+                await _loadPesosPadrao();
+                if (!mounted) return;
+                _setPesoPadrao();
               },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: _HomeMenuAction.padroesPeso,
+                  child: ListTile(
+                    leading: Icon(Icons.monitor_weight_outlined),
+                    title: Text('Padrões de peso'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

@@ -2,363 +2,277 @@ import 'package:flutter/material.dart';
 import 'package:pesagem_frangos/main.dart';
 import 'package:pesagem_frangos/util/util.dart';
 
+enum _PadraoAction { editar, excluir }
+
 class AddPesopadraoPage extends StatefulWidget {
+  const AddPesopadraoPage({super.key});
+
   @override
-  _AddPesopadraoPageState createState() => _AddPesopadraoPageState();
+  State<AddPesopadraoPage> createState() => _AddPesopadraoPageState();
 }
 
 class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
-  List<DropdownMenuItem<String>> _listSexo = Util.sexo();
-  TextEditingController _pesoPadraoController = TextEditingController();
-  TextEditingController _pesoPadraoEditController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _pesoPadraoController = TextEditingController();
+  final _pesoPadraoEditController = TextEditingController();
   String _sexoSelecionado = 'Macho';
-
-  late List<String> _padraoMacho;
-  late List<String> _padraoFemea;
   List<String> _listPesoPadrao = [];
-  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  bool get _isDerivedStandard => _sexoSelecionado == 'Misto';
 
   @override
   void initState() {
-    _doInit();
     super.initState();
+    _getListPesoPadrao();
   }
 
   @override
   void dispose() {
+    _pesoPadraoController.dispose();
+    _pesoPadraoEditController.dispose();
     super.dispose();
   }
 
-  _doInit() async {
-    _getListPesoPadrao();
-    if (mounted) {
-      setState(() {});
+  Future<void> _getListPesoPadrao() async {
+    final sexo = _sexoSelecionado;
+    final listPadrao = await Util.getListPesoPadrao(sexo);
+    if (!mounted || sexo != _sexoSelecionado) return;
+    setState(() => _listPesoPadrao = List<String>.from(listPadrao));
+  }
+
+  Future<void> _selectSexo(String? sexo) async {
+    if (sexo == null || sexo == _sexoSelecionado) return;
+    setState(() => _sexoSelecionado = sexo);
+    await _getListPesoPadrao();
+  }
+
+  String? _validatePositiveWeight(String? value) {
+    final weight = int.tryParse(value?.trim() ?? '');
+    if (weight == null || weight <= 0) return 'Informe um peso maior que zero';
+    return null;
+  }
+
+  Future<void> _saveList(List<String> updatedList) async {
+    final sexo = _sexoSelecionado;
+    final preferenceKey = switch (sexo) {
+      'Macho' => 'padraoMacho',
+      'Fêmea' => 'padraoFemea',
+      _ => null,
+    };
+    if (preferenceKey == null) return;
+    await mPrefs.setStringList(preferenceKey, updatedList);
+    if (!mounted || sexo != _sexoSelecionado) return;
+    setState(() => _listPesoPadrao = updatedList);
+  }
+
+  Future<void> _addPeso() async {
+    if (_isDerivedStandard || !_formKey.currentState!.validate()) return;
+    if (_listPesoPadrao.length >= 55) return;
+    final peso = _pesoPadraoController.text.trim();
+    await _saveList([..._listPesoPadrao, peso]);
+    if (!mounted) return;
+    _pesoPadraoController.clear();
+  }
+
+  Future<void> _editPeso(String peso, int index) async {
+    if (_isDerivedStandard || index >= _listPesoPadrao.length) return;
+    final updatedList = List<String>.from(_listPesoPadrao)..[index] = peso;
+    await _saveList(updatedList);
+  }
+
+  Future<void> _removePeso(int index) async {
+    if (_isDerivedStandard || index >= _listPesoPadrao.length) return;
+    final updatedList = List<String>.from(_listPesoPadrao)..removeAt(index);
+    await _saveList(updatedList);
+  }
+
+  void _handleRowAction(_PadraoAction action, int index) {
+    if (_isDerivedStandard) {
+      _showMixedStandardMessage();
+      return;
+    }
+    switch (action) {
+      case _PadraoAction.editar:
+        _showEditDialog(index);
+      case _PadraoAction.excluir:
+        _showDeleteDialog(index);
     }
   }
 
-  _getListPesoPadrao() async {
-    var listPadrao = await Util.getListPesoPadrao(_sexoSelecionado);
-
-    setState(() {
-      _listPesoPadrao = listPadrao;
-    });
+  Future<void> _showMixedStandardMessage() {
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: const Text(
+          'O padrão do Misto é calculado a partir dos outros',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Entendi'),
+          ),
+        ],
+      ),
+    );
   }
 
-  _addPeso(String peso) async {
-    if (_formKey.currentState!.validate() && int.tryParse(peso)! > 0) {
-      if (_listPesoPadrao.length < 55) {
-        if (_sexoSelecionado == 'Macho') {
-          setState(() {
-            _padraoMacho = _listPesoPadrao;
-            _padraoMacho.add(peso);
-          });
-
-          await mPrefs.setStringList("padraoMacho", _padraoMacho);
-        } else if (_sexoSelecionado == 'Fêmea') {
-          setState(() {
-            _padraoFemea = _listPesoPadrao;
-            _padraoFemea.add(peso);
-          });
-
-          await mPrefs.setStringList("padraoFemea", _padraoFemea);
-        }
-      }
-    }
+  Future<void> _showEditDialog(int index) async {
+    _pesoPadraoEditController.text = _listPesoPadrao[index];
+    final formKey = GlobalKey<FormState>();
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Editar peso padrão'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            key: const Key('editarPesoPadraoField'),
+            controller: _pesoPadraoEditController,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            validator: _validatePositiveWeight,
+            decoration: const InputDecoration(labelText: 'Peso padrão'),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+              await _editPeso(_pesoPadraoEditController.text.trim(), index);
+              if (!dialogContext.mounted) return;
+              Navigator.of(dialogContext).pop();
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
   }
 
-  _editPeso(String peso, int index) async {
-    if (_sexoSelecionado == 'Macho') {
-      setState(() {
-        _padraoMacho = _listPesoPadrao;
-        _padraoMacho[index] = peso;
-      });
-
-      await mPrefs.setStringList("padraoMacho", _padraoMacho);
-    } else if (_sexoSelecionado == 'Fêmea') {
-      setState(() {
-        _padraoFemea = _listPesoPadrao;
-        _padraoFemea[index] = peso;
-      });
-
-      await mPrefs.setStringList("padraoFemea", _padraoFemea);
-    }
-  }
-
-  _removePeso() async {
-    if (_sexoSelecionado == 'Macho') {
-      setState(() {
-        _padraoMacho.removeLast();
-      });
-
-      await mPrefs.setStringList("padraoMacho", _padraoMacho);
-    } else if (_sexoSelecionado == 'Fêmea') {
-      setState(() {
-        _padraoFemea.removeLast();
-      });
-
-      await mPrefs.setStringList("padraoFemea", _padraoFemea);
-    }
+  Future<void> _showDeleteDialog(int index) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Excluir padrão?'),
+        content: Text('Remover o peso da idade $index?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              await _removePeso(index);
+            },
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final double width = MediaQuery.of(context).size.width;
-    final double height = MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top;
-
     return Scaffold(
-      appBar: AppBar(title: Text('Peso Padrão')),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: InputDecorator(
-              decoration: InputDecoration(
-                labelStyle: TextStyle(fontSize: 20),
-                labelText: "Sexo",
-                border: OutlineInputBorder(),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  style: TextStyle(fontSize: 20, color: Colors.black),
-                  value: _sexoSelecionado,
-                  isDense: true,
-                  hint: Text("Selecione um sexo"),
-                  onChanged: (String? selection) {
-                    setState(() {
-                      _sexoSelecionado = selection!;
-                    });
-
-                    _getListPesoPadrao();
-                  },
-                  items: _listSexo,
-                ),
+      appBar: AppBar(title: const Text('Padrões de peso')),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: DropdownButtonFormField<String>(
+                key: const Key('sexoPadraoField'),
+                initialValue: _sexoSelecionado,
+                decoration: const InputDecoration(labelText: 'Sexo'),
+                items: Util.sexo(),
+                onChanged: _selectSexo,
               ),
             ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Form(
-                    key: _formKey,
-                    child: TextFormField(
-                      style: TextStyle(fontSize: 20),
-                      keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.next,
-                      validator: Util.validateForm,
-                      controller: _pesoPadraoController,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Peso Padrão',
-                      ),
-                      onFieldSubmitted: (_) =>
-                          FocusScope.of(context).nextFocus(),
-                    ),
-                  ),
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                  child: IconButton(
-                    icon: Icon(Icons.add_circle, size: 30),
-                    onPressed: () {
-                      _addPeso(_pesoPadraoController.text);
-
-                      _pesoPadraoController.value = TextEditingValue(text: '');
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(border: Border.all()),
-              child: Center(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Form(
+                key: _formKey,
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  mainAxisSize: MainAxisSize.max,
                   children: [
-                    Text(
-                      'Idade',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.black,
+                    Expanded(
+                      child: TextFormField(
+                        key: const Key('novoPesoPadraoField'),
+                        controller: _pesoPadraoController,
+                        enabled: !_isDerivedStandard,
+                        keyboardType: TextInputType.number,
+                        validator: _validatePositiveWeight,
+                        decoration: const InputDecoration(
+                          labelText: 'Novo peso padrão',
+                          suffixText: 'g',
+                        ),
                       ),
                     ),
-                    Text(
-                      'Peso Padrão',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.black,
-                      ),
+                    const SizedBox(width: 12),
+                    FilledButton(
+                      onPressed: _isDerivedStandard ? null : _addPeso,
+                      child: const Text('Adicionar'),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
-
-          Expanded(
-            child: ListView.builder(
-              itemCount: _listPesoPadrao.length,
-              itemBuilder: (_, index) {
-                return Padding(
-                  padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                  child: InkWell(
-                    child: Column(
-                      children: [
-                        Container(
-                          height: 30,
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(),
-                              left: BorderSide(),
-                              right: BorderSide(),
-                            ),
-                          ),
-                          child: Center(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              mainAxisSize: MainAxisSize.max,
-                              children: [
-                                Text(
-                                  '$index',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w400,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                Text(
-                                  '${_listPesoPadrao[index]}',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w400,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Idade',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    onLongPress: () async {
-                      _pesoPadraoEditController.value = TextEditingValue(
-                        text: _listPesoPadrao[index],
-                      );
-                      await showMenu(
-                        context: context,
-                        position: RelativeRect.fromLTRB(
-                          width * .1,
-                          height * .45,
-                          width * .1,
-                          height * .25,
-                        ),
-                        items: [
-                          PopupMenuItem<String>(
-                            value: 'Editar',
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  width: width * .35,
-                                  child: TextFormField(
-                                    style: TextStyle(fontSize: 20),
-                                    keyboardType: TextInputType.number,
-                                    textInputAction: TextInputAction.next,
-                                    validator: Util.validateForm,
-                                    controller: _pesoPadraoEditController,
-                                    decoration: InputDecoration(
-                                      border: OutlineInputBorder(),
-                                      labelText: 'Peso Padrão',
-                                    ),
-                                    onFieldSubmitted: (_) =>
-                                        FocusScope.of(context).nextFocus(),
-                                  ),
-                                ),
-
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 4.0),
-                                  child: Row(
-                                    children: [
-                                      IconButton(
-                                        icon: Icon(Icons.add_circle),
-                                        onPressed: () {
-                                          _editPeso(
-                                            _pesoPadraoEditController.text,
-                                            index,
-                                          );
-                                          _pesoPadraoEditController.value =
-                                              TextEditingValue(text: '');
-                                          Navigator.pop(context);
-                                        },
-                                      ),
-
-                                      IconButton(
-                                        icon: Icon(Icons.delete_forever),
-                                        onPressed: () {
-                                          if (_sexoSelecionado != 'Misto') {
-                                            Util.showDialogAlert(
-                                              context: context,
-                                              title:
-                                                  'Remover o último peso registrado?',
-                                              onConfirm: () {
-                                                Navigator.pop(
-                                                  context,
-                                                ); // fechar dialog
-                                                Navigator.pop(
-                                                  context,
-                                                ); // fechar menu popup
-                                                _removePeso();
-                                              },
-                                              onCancel: () {
-                                                Navigator.pop(
-                                                  context,
-                                                ); // fechar dialog
-                                                Navigator.pop(
-                                                  context,
-                                                ); // fechar menu popup
-                                              },
-                                            );
-                                          } else {
-                                            Util.showDialogAlert(
-                                              context: context,
-                                              title:
-                                                  'O Padrão do Misto é calculado a partir dos outros',
-                                              onConfirm: () =>
-                                                  Navigator.pop(context),
-                                              onCancel: () =>
-                                                  Navigator.pop(context),
-                                            );
-                                          }
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      );
-                    },
                   ),
-                );
-              },
+                  Expanded(
+                    child: Text(
+                      'Peso padrão',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  SizedBox(width: 48),
+                ],
+              ),
             ),
-          ),
-        ],
+            Expanded(
+              child: ListView.builder(
+                itemCount: _listPesoPadrao.length,
+                itemBuilder: (context, index) => ListTile(
+                  leading: CircleAvatar(child: Text('$index')),
+                  title: Text('${_listPesoPadrao[index]} g'),
+                  subtitle: Text('Idade $index dias'),
+                  trailing: PopupMenuButton<_PadraoAction>(
+                    tooltip: 'Ações da idade $index',
+                    onSelected: (action) => _handleRowAction(action, index),
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(
+                        value: _PadraoAction.editar,
+                        child: ListTile(
+                          leading: Icon(Icons.edit_outlined),
+                          title: Text('Editar'),
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: _PadraoAction.excluir,
+                        child: ListTile(
+                          leading: Icon(Icons.delete_outline),
+                          title: Text('Excluir'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

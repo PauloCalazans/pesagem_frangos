@@ -31,6 +31,17 @@ void main() {
     await tester.enterText(input('avesPesadasField'), '10');
   }
 
+  testWidgets('opens weight standards through a named menu action', (
+    tester,
+  ) async {
+    await pumpPesagemApp(tester);
+
+    await tester.tap(find.byTooltip('Mais opções'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Padrões de peso'), findsOneWidget);
+  });
+
   testWidgets('navigates through steps and preserves lot data', (tester) async {
     await pumpPesagemApp(tester);
 
@@ -99,7 +110,9 @@ void main() {
     await tester.enterText(input('idadeField'), '21');
     expect(find.text('1021'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.mode_edit));
+    await tester.tap(find.byTooltip('Mais opções'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Padrões de peso'));
     await tester.pumpAndSettle();
     await mPrefs.setStringList(
       'padraoMacho',
