@@ -64,6 +64,92 @@ void main() {
     expect(find.text('Continuar'), findsOneWidget);
   });
 
+  testWidgets('step actions stay above the keyboard on a compact phone', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(720, 1280);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetViewInsets);
+
+    await pumpPesagemApp(tester);
+    await fillValidLote(tester);
+    await tester.tap(input('idadeField'));
+    await tester.pump();
+
+    tester.view.viewInsets = const FakeViewPadding(bottom: 600);
+    await tester.pumpAndSettle();
+
+    final primaryAction = find.widgetWithText(FilledButton, 'Continuar');
+    final keyboardTop =
+        (tester.view.physicalSize.height - tester.view.viewInsets.bottom) /
+        tester.view.devicePixelRatio;
+
+    expect(tester.takeException(), isNull);
+    expect(primaryAction.hitTestable(), findsOneWidget);
+    final firstStepSecondaryAction = find.widgetWithText(
+      TextButton,
+      'Cancelar',
+    );
+    expect(firstStepSecondaryAction.hitTestable(), findsOneWidget);
+    expect(
+      tester.getBottomLeft(primaryAction).dy,
+      lessThanOrEqualTo(keyboardTop),
+    );
+    expect(
+      tester.getBottomLeft(firstStepSecondaryAction).dy,
+      lessThanOrEqualTo(keyboardTop),
+    );
+    expect(input('idadeField').hitTestable(), findsOneWidget);
+    expect(
+      tester.getBottomLeft(input('idadeField')).dy,
+      lessThanOrEqualTo(keyboardTop),
+    );
+
+    await tester.tap(primaryAction);
+    await tester.pumpAndSettle();
+    await fillValidConsumo(tester);
+
+    final secondStepAction = find.widgetWithText(FilledButton, 'Continuar');
+    final secondStepSecondaryAction = find.widgetWithText(TextButton, 'Voltar');
+    expect(secondStepAction.hitTestable(), findsOneWidget);
+    expect(secondStepSecondaryAction.hitTestable(), findsOneWidget);
+    expect(
+      tester.getBottomLeft(secondStepAction).dy,
+      lessThanOrEqualTo(keyboardTop),
+    );
+    expect(
+      tester.getBottomLeft(secondStepSecondaryAction).dy,
+      lessThanOrEqualTo(keyboardTop),
+    );
+
+    await tester.tap(secondStepAction);
+    await tester.pumpAndSettle();
+    await tester.enterText(input('balancasField'), '1200');
+
+    final calculateAction = find.widgetWithText(FilledButton, 'Calcular');
+    final thirdStepSecondaryAction = find.widgetWithText(TextButton, 'Voltar');
+    expect(calculateAction.hitTestable(), findsOneWidget);
+    expect(thirdStepSecondaryAction.hitTestable(), findsOneWidget);
+    expect(
+      tester.getBottomLeft(calculateAction).dy,
+      lessThanOrEqualTo(keyboardTop),
+    );
+    expect(
+      tester.getBottomLeft(thirdStepSecondaryAction).dy,
+      lessThanOrEqualTo(keyboardTop),
+    );
+
+    await tester.tap(calculateAction);
+    tester.view.resetViewInsets();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Resultado'), findsOneWidget);
+    expect(find.text('Nova pesagem').hitTestable(), findsOneWidget);
+    expect(find.text('Compartilhar resumo').hitTestable(), findsOneWidget);
+  });
+
   testWidgets('navigates through steps and preserves lot data', (tester) async {
     await pumpPesagemApp(tester);
 
@@ -318,5 +404,12 @@ void main() {
       find.text('As leituras e a tara devem resultar em peso médio positivo'),
       findsOneWidget,
     );
+    final snackBar = find.byType(SnackBar);
+    final calculateAction = find.widgetWithText(FilledButton, 'Calcular');
+    expect(
+      tester.getBottomLeft(snackBar).dy,
+      lessThanOrEqualTo(tester.getTopLeft(calculateAction).dy),
+    );
+    expect(calculateAction.hitTestable(), findsOneWidget);
   });
 }

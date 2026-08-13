@@ -19,7 +19,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   final _stepKeys = List.generate(3, (_) => GlobalKey<FormState>());
   final _controllers = PesagemFormControllers();
   final _titles = const [
@@ -37,15 +37,32 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _controllers.idade.addListener(_setPesoPadrao);
     _loadPesosPadrao();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controllers.idade.removeListener(_setPesoPadrao);
     _controllers.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      for (final entry in _controllers.focusNodes.entries) {
+        if (!entry.value.hasFocus) continue;
+        final fieldContext = _controllers.fieldKeys[entry.key]?.currentContext;
+        if (fieldContext != null) {
+          Scrollable.ensureVisible(fieldContext, alignment: 0.2);
+        }
+        return;
+      }
+    });
   }
 
   Future<void> _loadPesosPadrao() async {
@@ -213,6 +230,7 @@ class _HomePageState extends State<HomePage> {
         Navigator.of(context).pop(result);
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         appBar: AppBar(
           title: const Text('Nova pesagem'),
           actions: [
@@ -252,19 +270,31 @@ class _HomePageState extends State<HomePage> {
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  16,
+                  16,
+                  16 + MediaQuery.viewInsetsOf(context).bottom,
+                ),
                 child: _currentStepWidget(),
               ),
             ),
           ],
         ),
-        bottomNavigationBar: PesagemBottomActions(
-          secondaryLabel: _currentStep == 0 ? 'Cancelar' : 'Voltar',
-          primaryLabel: _currentStep == 2 ? 'Calcular' : 'Continuar',
-          onSecondary: _currentStep == 0
-              ? () => Navigator.maybePop(context)
-              : _back,
-          onPrimary: _continue,
+        bottomNavigationBar: AnimatedPadding(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
+          ),
+          child: PesagemBottomActions(
+            secondaryLabel: _currentStep == 0 ? 'Cancelar' : 'Voltar',
+            primaryLabel: _currentStep == 2 ? 'Calcular' : 'Continuar',
+            onSecondary: _currentStep == 0
+                ? () => Navigator.maybePop(context)
+                : _back,
+            onPrimary: _continue,
+          ),
         ),
       ),
     );
