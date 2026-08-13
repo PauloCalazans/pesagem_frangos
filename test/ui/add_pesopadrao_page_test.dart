@@ -152,6 +152,27 @@ void main() {
     expect(find.text('40 g'), findsNothing);
   });
 
+  testWidgets('does not let a stale load overwrite a confirmed save', (
+    tester,
+  ) async {
+    final staleLoad = Completer<List<String>>();
+    await pumpStandardsPage(
+      tester,
+      initialValues: const {},
+      loadPesos: (_) => staleLoad.future,
+      savePesos: (_, __) async => true,
+    );
+
+    await tester.enterText(find.byKey(const Key('novoPesoPadraoField')), '70');
+    await tester.tap(find.text('Adicionar'));
+    await tester.pumpAndSettle();
+    staleLoad.complete(<String>['42']);
+    await tester.pumpAndSettle();
+
+    expect(find.text('70 g'), findsOneWidget);
+    expect(find.text('42 g'), findsNothing);
+  });
+
   testWidgets('disables a second mutation while the first save is pending', (
     tester,
   ) async {

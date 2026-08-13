@@ -66,6 +66,7 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
 
   Future<bool> _saveList(List<String> updatedList) async {
     if (_isSaving) return false;
+    ++_loadRequest;
     final sexo = _sexoSelecionado;
     final preferenceKey = switch (sexo) {
       'Macho' => 'padraoMacho',
