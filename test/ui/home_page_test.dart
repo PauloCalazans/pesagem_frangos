@@ -54,6 +54,61 @@ void main() {
     await tester.enterText(input('idadeField'), '21');
 
     expect(find.text('1021'), findsOneWidget);
+    expect(
+      find.text('Preenchido automaticamente pela idade e sexo'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('updates the standard weight when the sex changes', (
+    tester,
+  ) async {
+    await pumpPesagemApp(tester);
+    await tester.enterText(input('idadeField'), '21');
+
+    await tester.tap(find.byKey(const Key('sexoField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Fêmea').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('921'), findsOneWidget);
+  });
+
+  testWidgets('keeps the latest standard weight after quickly reverting sex', (
+    tester,
+  ) async {
+    await pumpPesagemApp(tester);
+    await tester.enterText(input('idadeField'), '21');
+
+    await tester.tap(find.byKey(const Key('sexoField')));
+    await tester.pump();
+    await tester.tap(find.text('Fêmea').last);
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('sexoField')));
+    await tester.pump();
+    await tester.tap(find.text('Macho').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('1021'), findsOneWidget);
+  });
+
+  testWidgets('reloads the standard weight after returning from the editor', (
+    tester,
+  ) async {
+    await pumpPesagemApp(tester);
+    await tester.enterText(input('idadeField'), '21');
+    expect(find.text('1021'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.mode_edit));
+    await tester.pumpAndSettle();
+    await mPrefs.setStringList(
+      'padraoMacho',
+      List.generate(22, (index) => index == 21 ? '7777' : '${1000 + index}'),
+    );
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('7777'), findsOneWidget);
   });
 
   testWidgets('focuses the first invalid field in the current step', (
@@ -138,6 +193,51 @@ void main() {
       scrollable: find.byType(Scrollable).last,
     );
     expect(find.textContaining('Mortalidade'), findsOneWidget);
+
+    Navigator.of(tester.element(find.text('Resultado dos Cálculos'))).pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Voltar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Voltar'));
+    await tester.pumpAndSettle();
+    expect(find.text('21'), findsOneWidget);
+  });
+
+  testWidgets('accepts trimmed numeric form values when calculating', (
+    tester,
+  ) async {
+    await pumpPesagemApp(tester);
+    await tester.enterText(input('idadeField'), '21');
+    await tester.enterText(input('idadeField'), ' 21 ');
+    await tester.enterText(input('avesAlojadasField'), ' 10000 ');
+    await tester.enterText(input('mortalidadeField'), ' 258 ');
+    await tester.tap(find.text('Continuar'));
+    await tester.pumpAndSettle();
+    await tester.enterText(input('racaoRecebidaField'), ' 1000 ');
+    await tester.enterText(input('estoqueField'), ' 200 ');
+    await tester.enterText(input('avesPesadasField'), ' 10 ');
+    await tester.tap(find.text('Continuar'));
+    await tester.pumpAndSettle();
+    await tester.enterText(input('balancasField'), ' 1200 ');
+    await tester.tap(find.text('Calcular'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Resultado dos Cálculos'), findsOneWidget);
+  });
+
+  testWidgets('handles a rapid continue and back without a key conflict', (
+    tester,
+  ) async {
+    await pumpPesagemApp(tester);
+    await fillValidLote(tester);
+
+    await tester.tap(find.text('Continuar'));
+    await tester.pump();
+    await tester.tap(find.text('Voltar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Dados do lote · etapa 1 de 3'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('does not update form controllers after disposal', (

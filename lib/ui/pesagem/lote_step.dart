@@ -11,14 +11,12 @@ class LoteStep extends StatelessWidget {
     required this.controllers,
     required this.sexo,
     required this.onSexoChanged,
-    this.onIdadeChanged,
   });
 
   final GlobalKey<FormState> formKey;
   final PesagemFormControllers controllers;
   final String sexo;
   final ValueChanged<String> onSexoChanged;
-  final ValueChanged<String>? onIdadeChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +58,7 @@ class LoteStep extends StatelessWidget {
             key: const Key('pesoPadraoField'),
             label: 'Peso padrão',
             unit: 'g',
+            helperText: 'Preenchido automaticamente pela idade e sexo',
             controller: controllers.pesoPadrao,
             formFieldKey: controllers.fieldKeys[PesagemField.pesoPadrao],
             focusNode: controllers.focusNodes[PesagemField.pesoPadrao],

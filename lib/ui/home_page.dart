@@ -72,6 +72,12 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  int _parseInt(TextEditingController controller, {int? defaultValue}) {
+    return int.tryParse(controller.text.trim()) ??
+        defaultValue ??
+        (throw ArgumentError.value(controller.text, 'controller'));
+  }
+
   void _continue() {
     if (!_validateAndFocusCurrentStep()) return;
     if (_currentStep < 2) {
@@ -119,18 +125,19 @@ class _HomePageState extends State<HomePage> {
 
   void _calculateAndOpenResult() {
     FocusScope.of(context).unfocus();
-    final resultado = PesoMedio(
-      idade: int.parse(_controllers.idade.text),
-      pesoPadrao: int.parse(_controllers.pesoPadrao.text),
-      avesAlojadas: int.parse(_controllers.avesAlojadas.text),
-      mortalidade: int.parse(_controllers.mortalidade.text),
-      racaoRecebida: int.parse(_controllers.racaoRecebida.text),
-      estoqueRacao: int.parse(_controllers.estoque.text),
-      tara: int.tryParse(_controllers.tara.text) ?? 0,
-      avesPesadas: int.parse(_controllers.avesPesadas.text),
-      balancas: _controllers.balancas.text.split('\n'),
-    );
+    late final PesoMedio resultado;
     try {
+      resultado = PesoMedio(
+        idade: _parseInt(_controllers.idade),
+        pesoPadrao: _parseInt(_controllers.pesoPadrao),
+        avesAlojadas: _parseInt(_controllers.avesAlojadas),
+        mortalidade: _parseInt(_controllers.mortalidade),
+        racaoRecebida: _parseInt(_controllers.racaoRecebida),
+        estoqueRacao: _parseInt(_controllers.estoque),
+        tara: _parseInt(_controllers.tara, defaultValue: 0),
+        avesPesadas: _parseInt(_controllers.avesPesadas),
+        balancas: _controllers.balancas.text.split('\n'),
+      );
       resultado.calcular();
     } on ArgumentError catch (_) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -245,10 +252,13 @@ class _HomePageState extends State<HomePage> {
           actions: [
             IconButton(
               icon: const Icon(Icons.mode_edit, size: 28),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => AddPesopadraoPage()),
-              ),
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => AddPesopadraoPage()),
+                );
+                if (mounted) await _loadPesosPadrao();
+              },
             ),
           ],
         ),
@@ -265,13 +275,7 @@ class _HomePageState extends State<HomePage> {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: KeyedSubtree(
-                    key: ValueKey(_currentStep),
-                    child: _currentStepWidget(),
-                  ),
-                ),
+                child: _currentStepWidget(),
               ),
             ),
           ],
