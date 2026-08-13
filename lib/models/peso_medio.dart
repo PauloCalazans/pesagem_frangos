@@ -8,6 +8,8 @@ class PesoMedio {
   late int balancadas; // quantas balanças foram digitadas
   late int desconto;
   late int avesVivas;
+  late double viabilidade;
+  late double diferencaPeso;
 
   int idade;
   int avesPesadas;
@@ -19,24 +21,82 @@ class PesoMedio {
   List<String> balancas;
   int mortalidade;
 
-  PesoMedio(
-      {required this.idade,
-      required this.avesPesadas,
-      required this.avesAlojadas,
-      required this.pesoPadrao,
-      required this.racaoRecebida,
-      required this.estoqueRacao,
-      required this.tara,
-      required this.balancas,
-      required this.mortalidade});
+  PesoMedio({
+    required this.idade,
+    required this.avesPesadas,
+    required this.avesAlojadas,
+    required this.pesoPadrao,
+    required this.racaoRecebida,
+    required this.estoqueRacao,
+    required this.tara,
+    required this.balancas,
+    required this.mortalidade,
+  });
+
+  Iterable<int> get _pesosValidos => balancas
+      .map((peso) => int.tryParse(peso.trim()))
+      .whereType<int>()
+      .where((peso) => peso > 0);
+
+  void validarEntradas() {
+    if (idade <= 0) {
+      throw ArgumentError.value(idade, 'idade', 'deve ser maior que zero');
+    }
+    if (avesPesadas <= 0) {
+      throw ArgumentError.value(
+        avesPesadas,
+        'avesPesadas',
+        'deve ser maior que zero',
+      );
+    }
+    if (avesAlojadas <= 0) {
+      throw ArgumentError.value(
+        avesAlojadas,
+        'avesAlojadas',
+        'deve ser maior que zero',
+      );
+    }
+    if (pesoPadrao <= 0) {
+      throw ArgumentError.value(
+        pesoPadrao,
+        'pesoPadrao',
+        'deve ser maior que zero',
+      );
+    }
+  }
+
+  void validarBalancas() {
+    if (balancadas == 0) {
+      throw ArgumentError.value(
+        balancas,
+        'balancas',
+        'deve conter ao menos uma leitura positiva',
+      );
+    }
+  }
+
+  void validarPesoMedio() {
+    if (!pesoMedio.isFinite || pesoMedio <= 0) {
+      throw ArgumentError.value(
+        tara,
+        'tara',
+        'não pode resultar em peso médio não positivo',
+      );
+    }
+  }
+
+  void validarAvesVivas() {
+    if (avesVivas <= 0) {
+      throw ArgumentError.value(
+        mortalidade,
+        'mortalidade',
+        'deve deixar ao menos uma ave viva',
+      );
+    }
+  }
 
   contarBalancas() {
-    balancadas = 0;
-    balancas.forEach((it) {
-      if(it.isNotEmpty && int.tryParse(it)! > 0) {
-        balancadas++;
-      }
-    });
+    balancadas = _pesosValidos.length;
   }
 
   calcularDesconto() {
@@ -45,15 +105,17 @@ class PesoMedio {
 
   somarPesoBalancas() {
     pesoTotal = 0;
-    balancas.forEach((peso) {
-      if(peso.isNotEmpty) {
-        pesoTotal += int.tryParse(peso)!;
-      }
-    });
+    for (final peso in _pesosValidos) {
+      pesoTotal += peso;
+    }
   }
 
   calcularPesoMedio() {
-    pesoMedio = (pesoTotal-desconto) / avesPesadas;
+    pesoMedio = (pesoTotal - desconto) / avesPesadas;
+  }
+
+  calcularDiferencaPeso() {
+    diferencaPeso = pesoMedio - pesoPadrao;
   }
 
   calcularGmd() {
@@ -65,7 +127,7 @@ class PesoMedio {
   }
 
   calcularConversao() {
-    ca = consumo / ((pesoMedio * avesVivas)/1000);
+    ca = consumo / ((pesoMedio * avesVivas) / 1000);
   }
 
   calcularPorcentagem() {
@@ -76,14 +138,24 @@ class PesoMedio {
     avesVivas = avesAlojadas - mortalidade;
   }
 
+  calcularViabilidade() {
+    viabilidade = (avesVivas / avesAlojadas) * 100;
+  }
+
   calcular() {
+    validarEntradas();
     contarBalancas();
+    validarBalancas();
     calcularDesconto();
     somarPesoBalancas();
     calcularPesoMedio();
+    validarPesoMedio();
+    calcularDiferencaPeso();
     calcularGmd();
     calcularConsumo();
     calcularAvesVivas();
+    validarAvesVivas();
+    calcularViabilidade();
     calcularConversao();
     calcularPorcentagem();
   }

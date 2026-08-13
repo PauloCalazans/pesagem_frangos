@@ -1,439 +1,301 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:pesagem_frangos/models/peso_medio.dart';
 import 'package:pesagem_frangos/ui/add_pesopadrao_page.dart';
+import 'package:pesagem_frangos/ui/pesagem/balancas_step.dart';
+import 'package:pesagem_frangos/ui/pesagem/consumo_step.dart';
+import 'package:pesagem_frangos/ui/pesagem/lote_step.dart';
+import 'package:pesagem_frangos/ui/pesagem/pesagem_form_controllers.dart';
+import 'package:pesagem_frangos/ui/resultado_page.dart';
 import 'package:pesagem_frangos/util/util.dart';
-import 'package:pesagem_frangos/widgets/stepper_custom.dart';
+import 'package:pesagem_frangos/widgets/pesagem_bottom_actions.dart';
+import 'package:pesagem_frangos/widgets/pesagem_progress_header.dart';
+
+enum _HomeMenuAction { padroesPeso }
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
-  _HomePageState createState() => _HomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
+  final _stepKeys = List.generate(3, (_) => GlobalKey<FormState>());
+  final _controllers = PesagemFormControllers();
+  final _titles = const [
+    'Dados do lote',
+    'Consumo e amostra',
+    'Leituras das balanças',
+  ];
 
   int _currentStep = 0;
-  String? _sexoSelecionado = 'Macho';
-  List<DropdownMenuItem<String>> _listSexo = Util.sexo();
+  bool _canPop = false;
+  String _sexoSelecionado = 'Macho';
   List<String> _listPesoPadrao = [];
-
-  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  TextEditingController _idadeController = TextEditingController();
-  TextEditingController _pesoPadraoController = TextEditingController();
-  TextEditingController _avesAlojadasController = TextEditingController();
-  TextEditingController _mortalidadeController = TextEditingController();
-  TextEditingController _racaoController = TextEditingController();
-  TextEditingController _estoqueController = TextEditingController();
-  TextEditingController _taraController = TextEditingController();
-  TextEditingController _avesPesadasController = TextEditingController();
-  TextEditingController _balancasController = TextEditingController();
+  var _pesoPadraoRequest = 0;
 
   @override
   void initState() {
-   _doInit();
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _controllers.idade.addListener(_setPesoPadrao);
+    _loadPesosPadrao();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _controllers.idade.removeListener(_setPesoPadrao);
+    _controllers.dispose();
     super.dispose();
   }
 
-  _doInit() async {
-    _getListPesoPadrao();
-    if(mounted) {
-      setState(() { });
-    }
-  }
-
-  _getListPesoPadrao() async {
-    _listPesoPadrao = await Util.getListPesoPadrao(_sexoSelecionado);
-  }
-
-  Widget _richText(String textBold, dynamic textNormal) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 12.0),
-      child: Column(
-        children: [
-          RichText(
-            text: TextSpan(
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Colors.black),
-                children: [
-                  TextSpan(text: "${textBold}: ", style: TextStyle(fontWeight: FontWeight.w500)),
-                  TextSpan(text: "${textNormal}"),
-                ]
-            ),
-          ),
-
-          SizedBox(height: 4)
-        ],
-      ),
-    );
-  }
-
-  _stepContinue() async {
-    if(_formKey.currentState!.validate()) {
-      if(_currentStep < 2)
-        setState(() {
-          _currentStep += 1;
-        });
-      else
-        _calcularPeso();
-    }
-  }
-
-  _calcularPeso() {
-    FocusScope.of(context).requestFocus(new FocusNode()); // fecha o teclado
-
-    PesoMedio vo = new PesoMedio(
-        idade: int.parse(_idadeController.text),
-        pesoPadrao: int.parse(_pesoPadraoController.text),
-        avesAlojadas: int.parse(_avesAlojadasController.text),
-        mortalidade: int.parse(_mortalidadeController.text),
-        racaoRecebida: int.parse(_racaoController.text),
-        estoqueRacao: int.parse(_estoqueController.text),
-        tara: int.tryParse(_taraController.text) ?? 0,
-        avesPesadas: int.parse(_avesPesadasController.text),
-        balancas: _balancasController.text.split('\n')
-    );
-
-    vo.calcular();
-
-    showModalBottomSheet(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20))),
-      context: context,
-      isDismissible: true,
-      isScrollControlled: true,
-      elevation: 5,
-      enableDrag: true,
-      builder: (_) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.8,
-          minChildSize: 0.3,
-          maxChildSize: 0.96,
-          expand: false,
-          builder: (context, scrollController){
-            return Column(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment:MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-
-                Align(
-                  alignment: Alignment.topCenter,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Container(
-                          width: 40,
-                          height: 6,
-                          decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(10)
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(height: 10),
-
-                      Text('Resultado dos Cálculos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400, color: Colors.black))
-                    ],
-                  ),
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Divider(height: 4),
-                ),
-
-                Expanded(
-                  child: ListView(
-                    controller: scrollController,
-                    children: [
-
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-
-                          _richText("Idade", '${vo.idade} dias'),
-                          _richText("AvesAlojadas", vo.avesAlojadas),
-                          _richText("Peso Total", '${vo.pesoTotal} g'),
-                          _richText("Tara Balaça", '${vo.tara} g'),
-                          _richText("Desconto Total", '${vo.desconto} g'),
-                          _richText("Balançadas", vo.balancadas),
-                          _richText("Média das Balanças", '${Util.nf().format((vo.pesoTotal-vo.desconto)/vo.balancadas)} g'),
-                          _richText("Aves Pesadas", vo.avesPesadas),
-                          _richText("Peso Médio", '${Util.nf().format(vo.pesoMedio)} g'),
-                          _richText("Peso Padrão", '${vo.pesoPadrao} g'),
-                          _richText("Porcentagem", '${Util.nf().format(vo.porcentagem)} %'),
-                          _richText("GMD", '${Util.nf().format(vo.gmd)} g'),
-                          _richText("Ração Recebida", '${vo.racaoRecebida} Kg'),
-                          _richText("Estoque", '${vo.estoqueRacao} Kg'),
-                          _richText("Consumo Ração", '${vo.consumo} Kg'),
-                          _richText("Mortalidade", vo.mortalidade),
-                          _richText("Aves Vivas", vo.avesVivas),
-                          _richText("Convesão Alimentar", Util.nfCa().format(vo.ca)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          },
-        );
+  @override
+  void didChangeMetrics() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      for (final entry in _controllers.focusNodes.entries) {
+        if (!entry.value.hasFocus) continue;
+        final fieldContext = _controllers.fieldKeys[entry.key]?.currentContext;
+        if (fieldContext != null) {
+          Scrollable.ensureVisible(fieldContext, alignment: 0.2);
+        }
+        return;
       }
-    );
+    });
   }
 
-  _setPesoPadrao(String? value) {
-    var idade = int.tryParse(value ?? "");
-    if(idade != null && idade < _listPesoPadrao.length) {
-      _pesoPadraoController.value = TextEditingValue(text: _listPesoPadrao[idade]);
-    } else {
-      _pesoPadraoController.clear();
+  Future<void> _loadPesosPadrao() async {
+    final sexo = _sexoSelecionado;
+    final request = ++_pesoPadraoRequest;
+    final pesosPadrao = await Util.getListPesoPadrao(sexo);
+    if (!mounted || request != _pesoPadraoRequest || sexo != _sexoSelecionado) {
+      return;
+    }
+    _listPesoPadrao = pesosPadrao;
+    _setPesoPadrao();
+  }
+
+  Future<void> _changeSexo(String sexo) async {
+    setState(() => _sexoSelecionado = sexo);
+    await _loadPesosPadrao();
+  }
+
+  void _setPesoPadrao() {
+    final idade = int.tryParse(_controllers.idade.text);
+    final pesoPadrao =
+        idade != null && idade >= 0 && idade < _listPesoPadrao.length
+        ? _listPesoPadrao[idade]
+        : '';
+    if (_controllers.pesoPadrao.text != pesoPadrao) {
+      _controllers.pesoPadrao.value = TextEditingValue(text: pesoPadrao);
     }
   }
 
-  Future<bool> _willPopScope() async {
-    bool close = false;
-    await Util.showDialogAlert(
-        context: context,
-        title: 'Deseja Sair do Aplicativo',
-        onConfirm: () {
-              close = true;
-              Navigator.pop(context);
-            },
-        onCancel: () => Navigator.pop(context)
-          );
+  int _parseInt(TextEditingController controller, {int? defaultValue}) {
+    return int.tryParse(controller.text.trim()) ??
+        defaultValue ??
+        (throw ArgumentError.value(controller.text, 'controller'));
+  }
 
+  void _continue() {
+    if (!_validateAndFocusCurrentStep()) return;
+    if (_currentStep < 2) {
+      setState(() => _currentStep++);
+      return;
+    }
+    _calculateAndOpenResult();
+  }
+
+  bool _validateAndFocusCurrentStep() {
+    final valid = _stepKeys[_currentStep].currentState!.validate();
+    if (valid) return true;
+    final order = <List<PesagemField>>[
+      [
+        PesagemField.idade,
+        PesagemField.pesoPadrao,
+        PesagemField.avesAlojadas,
+        PesagemField.mortalidade,
+      ],
+      [
+        PesagemField.racaoRecebida,
+        PesagemField.estoque,
+        PesagemField.tara,
+        PesagemField.avesPesadas,
+      ],
+      [PesagemField.balancas],
+    ];
+    final invalid = order[_currentStep].firstWhere(
+      (field) => _controllers.fieldKeys[field]!.currentState?.hasError ?? false,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final context = _controllers.fieldKeys[invalid]!.currentContext;
+      _controllers.focusNodes[invalid]!.requestFocus();
+      if (context != null) {
+        Scrollable.ensureVisible(context, alignment: 0.2);
+      }
+    });
+    return false;
+  }
+
+  void _back() {
+    if (_currentStep > 0) setState(() => _currentStep--);
+  }
+
+  Future<void> _calculateAndOpenResult() async {
+    FocusScope.of(context).unfocus();
+    late final PesoMedio resultado;
+    try {
+      resultado = PesoMedio(
+        idade: _parseInt(_controllers.idade),
+        pesoPadrao: _parseInt(_controllers.pesoPadrao),
+        avesAlojadas: _parseInt(_controllers.avesAlojadas),
+        mortalidade: _parseInt(_controllers.mortalidade),
+        racaoRecebida: _parseInt(_controllers.racaoRecebida),
+        estoqueRacao: _parseInt(_controllers.estoque),
+        tara: _parseInt(_controllers.tara, defaultValue: 0),
+        avesPesadas: _parseInt(_controllers.avesPesadas),
+        balancas: _controllers.balancas.text.split('\n'),
+      );
+      resultado.calcular();
+    } on ArgumentError catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'As leituras e a tara devem resultar em peso médio positivo',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final action = await Navigator.of(context).push<ResultadoAction>(
+      MaterialPageRoute(builder: (_) => ResultadoPage(resultado: resultado)),
+    );
+    if (!mounted || action != ResultadoAction.novaPesagem) return;
+    for (final controller in [
+      _controllers.idade,
+      _controllers.pesoPadrao,
+      _controllers.avesAlojadas,
+      _controllers.mortalidade,
+      _controllers.racaoRecebida,
+      _controllers.estoque,
+      _controllers.tara,
+      _controllers.avesPesadas,
+      _controllers.balancas,
+    ]) {
+      controller.clear();
+    }
+    setState(() => _currentStep = 0);
+  }
+
+  Future<bool> _confirmExit() async {
+    var close = false;
+    await Util.showDialogAlert(
+      context: context,
+      title: 'Deseja Sair do Aplicativo',
+      onConfirm: () {
+        close = true;
+        Navigator.pop(context);
+      },
+      onCancel: () => Navigator.pop(context),
+    );
     return close;
+  }
+
+  Widget _currentStepWidget() {
+    switch (_currentStep) {
+      case 0:
+        return LoteStep(
+          formKey: _stepKeys[0],
+          controllers: _controllers,
+          sexo: _sexoSelecionado,
+          onSexoChanged: _changeSexo,
+        );
+      case 1:
+        return ConsumoStep(formKey: _stepKeys[1], controllers: _controllers);
+      default:
+        return BalancasStep(formKey: _stepKeys[2], controllers: _controllers);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _willPopScope,
+    return PopScope(
+      canPop: _canPop,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop || !await _confirmExit() || !mounted) return;
+        setState(() => _canPop = true);
+        Navigator.of(context).pop(result);
+      },
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         appBar: AppBar(
-          title: Text('Pesagem'),
+          title: const Text('Nova pesagem'),
           actions: [
-            IconButton(
-              icon: Icon(Icons.mode_edit, size: 32),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddPesopadraoPage())),
-            )
+            PopupMenuButton<_HomeMenuAction>(
+              tooltip: 'Mais opções',
+              onSelected: (action) async {
+                if (action != _HomeMenuAction.padroesPeso) return;
+                await Navigator.of(context).push<void>(
+                  MaterialPageRoute(builder: (_) => AddPesopadraoPage()),
+                );
+                if (!mounted) return;
+                await _loadPesosPadrao();
+                if (!mounted) return;
+                _setPesoPadrao();
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: _HomeMenuAction.padroesPeso,
+                  child: ListTile(
+                    leading: Icon(Icons.monitor_weight_outlined),
+                    title: Text('Padrões de peso'),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
-        body: Form(
-          key: _formKey,
-          child: StepperCustom(
-            currentStep: _currentStep,
-            onStepContinue: _stepContinue,
-            onStepCancel: () {
-              if(_currentStep >= 1) {
-                setState(() {
-                  _currentStep -= 1;
-                });
-              }
-            },
-            steps: [
-              StepCustom(
-                content: ListView(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.only(left: 8, right: 8, top: 8),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: InputDecorator(
-                        decoration: InputDecoration(
-                          labelStyle: TextStyle(fontSize: 20),
-                          labelText: "Sexo",
-                          border: OutlineInputBorder()
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            style: TextStyle(fontSize: 20, color: Colors.black),
-                            value: _sexoSelecionado,
-                            isDense: true,
-                            hint: Text("Selecione um sexo"),
-                            onChanged: (String? selection) {
-                              setState(() {
-                                _sexoSelecionado = selection;
-                                _getListPesoPadrao();
-                              });
-
-                              Future.delayed(Duration(milliseconds: 100)).then((value) => _setPesoPadrao(_idadeController.text));
-                            },
-                            items: _listSexo,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: TextFormField(
-                        style: TextStyle(fontSize: 20),
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
-                        validator: Util.validateForm,
-                        controller: _idadeController,
-                        decoration: InputDecoration(
-                          labelText: 'Idade',
-                          border: OutlineInputBorder(),
-                        ),
-                        onChanged: _setPesoPadrao,
-                        onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                      ),
-                    ),
-
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: TextFormField(
-                        style: TextStyle(fontSize: 20),
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
-                        validator: Util.validateForm,
-                        controller: _pesoPadraoController,
-                        decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Peso Padrão'
-                        ),
-                        onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                      ),
-                    ),
-
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: TextFormField(
-                        style: TextStyle(fontSize: 20),
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
-                        validator: Util.validateForm,
-                        controller: _avesAlojadasController,
-                        decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Aves Alojadas'
-                        ),
-                        onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                      ),
-                    ),
-
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: TextFormField(
-                        style: TextStyle(fontSize: 20),
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
-                        validator: Util.validateForm,
-                        controller: _mortalidadeController,
-                        decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Mortalidade'
-                        ),
-                        onFieldSubmitted: (_) => _stepContinue(),
-                      ),
-                    ),
-                  ],
-                )
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+              child: PesagemProgressHeader(
+                title: _titles[_currentStep],
+                currentStep: _currentStep + 1,
+                totalSteps: _titles.length,
               ),
-
-              StepCustom(
-                content: ListView(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.only(left: 8, right: 8, top: 8),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: TextFormField(
-                        style: TextStyle(fontSize: 20),
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
-                        validator: Util.validateForm,
-                        controller: _racaoController,
-                        decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Ração Recebida'
-                        ),
-                        onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                      ),
-                    ),
-
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: TextFormField(
-                        style: TextStyle(fontSize: 20),
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
-                        validator: Util.validateForm,
-                        controller: _estoqueController,
-                        onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                        decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Estoque de Hoje'
-                        ),
-                      ),
-                    ),
-
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: TextFormField(
-                        style: TextStyle(fontSize: 20),
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
-                        controller: _taraController,
-                        onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                        decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Tara Balança'
-                        ),
-                      ),
-                    ),
-
-                    TextFormField(
-                      style: TextStyle(fontSize: 20),
-                      keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.next,
-                      controller: _avesPesadasController,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Aves Pesadas'
-                      ),
-                      validator: Util.validateForm,
-                      onFieldSubmitted: (_) => _stepContinue(),
-                    ),
-                  ],
-                )
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  16,
+                  16,
+                  16 + MediaQuery.viewInsetsOf(context).bottom,
+                ),
+                child: _currentStepWidget(),
               ),
-
-              StepCustom(
-                content: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TextFormField(
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w400),
-                    cursorWidth: 3,
-                    keyboardType: TextInputType.multiline,
-                    minLines: 1,
-                    maxLines: 200,
-                    textInputAction: TextInputAction.newline,
-                    validator: Util.validateForm,
-                    controller: _balancasController,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9\n]'))
-                    ],
-                    decoration: InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Balanças'
-                    ),
-                  ),
-                )
-              ),
-            ],
+            ),
+          ],
+        ),
+        bottomNavigationBar: AnimatedPadding(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
           ),
-        )
+          child: PesagemBottomActions(
+            secondaryLabel: _currentStep == 0 ? 'Cancelar' : 'Voltar',
+            primaryLabel: _currentStep == 2 ? 'Calcular' : 'Continuar',
+            onSecondary: _currentStep == 0
+                ? () => Navigator.maybePop(context)
+                : _back,
+            onPrimary: _continue,
+          ),
+        ),
       ),
     );
   }

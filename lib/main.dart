@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:pesagem_frangos/models/peso_padrao.dart';
+import 'package:pesagem_frangos/theme/app_theme.dart';
 import 'package:pesagem_frangos/ui/home_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,11 +14,11 @@ void main() async {
   mPrefs = await SharedPreferences.getInstance();
   List<String> padraoMacho = mPrefs.getStringList("padraoMacho") ?? [];
   List<String> padraoFemea = mPrefs.getStringList("padraoFemea") ?? [];
-  if(padraoMacho.length == 0) {
+  if (padraoMacho.length == 0) {
     mPrefs.setStringList("padraoMacho", PesoPadrao.padraoMacho);
   }
 
-  if(padraoFemea.length == 0) {
+  if (padraoFemea.length == 0) {
     mPrefs.setStringList("padraoFemea", PesoPadrao.padraoFemea);
   }
 
@@ -25,7 +26,6 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -33,19 +33,13 @@ class MyApp extends StatelessWidget {
       darkTheme: ThemeData.dark(),
       themeMode: ThemeMode.light,
       title: 'Pesagem',
-      theme: ThemeData(
-        primarySwatch: Colors.teal,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
+      theme: AppTheme.light,
       home: HomePage(),
       localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
       ],
-      supportedLocales: [
-        const Locale('en', 'US'),
-        Locale('pt', 'BR'),
-      ],
+      supportedLocales: [const Locale('en', 'US'), Locale('pt', 'BR')],
     );
   }
 }
