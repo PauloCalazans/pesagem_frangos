@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pesagem_frangos/main.dart';
 import 'package:pesagem_frangos/models/peso_medio.dart';
@@ -98,6 +99,55 @@ void main() {
     expect(find.text('Média das balanças'), findsOneWidget);
     expect(find.text('Balanças consideradas'), findsOneWidget);
     semantics.dispose();
+  });
+
+  testWidgets('result exposes a localized close action', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        supportedLocales: const [Locale('pt', 'BR')],
+        initialRoute: '/resultado',
+        routes: {
+          '/': (_) => const Scaffold(),
+          '/resultado': (_) => ResultadoPage(
+            resultado: buildCalculatedResult(),
+            onShare: (_) async {},
+          ),
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final closeResult = find.byTooltip('Voltar');
+    expect(closeResult, findsOneWidget);
+    expect(
+      tester.getSemantics(closeResult),
+      isSemantics(tooltip: 'Voltar', isButton: true),
+    );
+    semantics.dispose();
+  });
+
+  testWidgets('result supports enlarged text without overflow', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(1.5)),
+          child: child!,
+        ),
+        home: ResultadoPage(
+          resultado: buildCalculatedResult(),
+          onShare: (_) async {},
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('102,1%'), findsOneWidget);
   });
 
   testWidgets('system back preserves the entered age in HomePage', (

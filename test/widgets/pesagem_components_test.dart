@@ -125,6 +125,40 @@ void main() {
       greaterThanOrEqualTo(48),
     );
   });
+
+  testWidgets(
+    'bottom actions do not overflow at compact width and large text',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: Scaffold(
+            bottomNavigationBar: PesagemBottomActions(
+              secondaryLabel: 'Nova pesagem',
+              primaryLabel: 'Compartilhar resumo',
+              onSecondary: () {},
+              onPrimary: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Nova pesagem'), findsOneWidget);
+      expect(find.text('Compartilhar resumo'), findsOneWidget);
+    },
+  );
 }
 
 double _contrastRatio(Color first, Color second) {

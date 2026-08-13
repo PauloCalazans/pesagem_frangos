@@ -34,12 +34,34 @@ void main() {
   testWidgets('opens weight standards through a named menu action', (
     tester,
   ) async {
+    final semantics = tester.ensureSemantics();
     await pumpPesagemApp(tester);
 
+    final optionsMenu = find.byTooltip('Mais opções');
+    expect(optionsMenu, findsOneWidget);
+    expect(
+      tester.getSemantics(optionsMenu),
+      isSemantics(tooltip: 'Mais opções', isButton: true),
+    );
     await tester.tap(find.byTooltip('Mais opções'));
     await tester.pumpAndSettle();
 
     expect(find.text('Padrões de peso'), findsOneWidget);
+    semantics.dispose();
+  });
+
+  testWidgets('form has no overflow on a compact portrait phone', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(720, 1280);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await pumpPesagemApp(tester);
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Continuar'), findsOneWidget);
   });
 
   testWidgets('navigates through steps and preserves lot data', (tester) async {
