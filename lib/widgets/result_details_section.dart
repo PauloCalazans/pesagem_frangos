@@ -14,6 +14,24 @@ class ResultDetailsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (initiallyExpanded) {
+      return Card(
+        margin: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              ...children,
+            ],
+          ),
+        ),
+      );
+    }
+
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
