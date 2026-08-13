@@ -5,6 +5,7 @@ import 'package:pesagem_frangos/main.dart';
 import 'package:pesagem_frangos/models/peso_medio.dart';
 import 'package:pesagem_frangos/theme/app_theme.dart';
 import 'package:pesagem_frangos/ui/resultado_page.dart';
+import 'package:pesagem_frangos/widgets/resultado_content.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 PesoMedio buildCalculatedResult() {
@@ -67,6 +68,37 @@ Future<void> _openResult(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('share content renders every detail already expanded', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: ResultadoContent(
+              resultado: buildCalculatedResult(),
+              expandAllDetails: true,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Peso médio'), findsOneWidget);
+    expect(find.text('Percentual do padrão'), findsOneWidget);
+    expect(find.text('Viabilidade'), findsOneWidget);
+    expect(find.text('GMD'), findsOneWidget);
+    expect(find.text('Conversão alimentar'), findsOneWidget);
+    expect(find.text('Peso total'), findsOneWidget);
+    expect(find.text('Média das balanças'), findsOneWidget);
+    expect(find.text('Ração recebida'), findsOneWidget);
+    expect(find.text('Estoque atual'), findsOneWidget);
+    expect(find.text('Resultado'), findsNothing);
+    expect(find.text('Nova pesagem'), findsNothing);
+    expect(find.text('Compartilhar resumo'), findsNothing);
+  });
+
   testWidgets('shows total standard percentage and viability', (tester) async {
     final resultado = buildCalculatedResult();
     await tester.pumpWidget(
