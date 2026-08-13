@@ -7,7 +7,8 @@ class PesagemProgressHeader extends StatelessWidget {
     required this.title,
     required this.currentStep,
     required this.totalSteps,
-  });
+  }) : assert(totalSteps > 0),
+       assert(currentStep >= 1 && currentStep <= totalSteps);
 
   final String title;
   final int currentStep;
@@ -27,6 +28,7 @@ class PesagemProgressHeader extends StatelessWidget {
           LinearProgressIndicator(
             value: currentStep / totalSteps,
             color: AppTheme.progress,
+            backgroundColor: AppTheme.primary,
           ),
         ],
       ),
