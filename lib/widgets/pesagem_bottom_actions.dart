@@ -39,7 +39,11 @@ class PesagemBottomActions extends StatelessWidget {
                   ? Stack(
                       alignment: Alignment.center,
                       children: [
-                        Opacity(opacity: 0, child: Text(primaryLabel)),
+                        Opacity(
+                          opacity: 0,
+                          alwaysIncludeSemantics: true,
+                          child: Text(primaryLabel),
+                        ),
                         const SizedBox.square(
                           dimension: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),

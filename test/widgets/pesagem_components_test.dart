@@ -182,6 +182,28 @@ void main() {
     await tester.tap(find.text('Compartilhar resumo'), warnIfMissed: false);
     expect(taps, 0);
   });
+
+  testWidgets('primary loading action keeps its accessible label', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          bottomNavigationBar: PesagemBottomActions(
+            secondaryLabel: 'Nova pesagem',
+            primaryLabel: 'Compartilhar resumo',
+            onSecondary: () {},
+            onPrimary: () {},
+            primaryLoading: true,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.bySemanticsLabel('Compartilhar resumo'), findsOneWidget);
+    semantics.dispose();
+  });
 }
 
 double _contrastRatio(Color first, Color second) {
