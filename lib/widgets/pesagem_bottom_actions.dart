@@ -7,12 +7,14 @@ class PesagemBottomActions extends StatelessWidget {
     required this.primaryLabel,
     required this.onSecondary,
     required this.onPrimary,
+    this.primaryLoading = false,
   });
 
   final String secondaryLabel;
   final String primaryLabel;
   final VoidCallback onSecondary;
   final VoidCallback onPrimary;
+  final bool primaryLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -31,9 +33,20 @@ class PesagemBottomActions extends StatelessWidget {
               child: Text(secondaryLabel),
             ),
             FilledButton(
-              onPressed: onPrimary,
+              onPressed: primaryLoading ? null : onPrimary,
               style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
-              child: Text(primaryLabel),
+              child: primaryLoading
+                  ? Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Opacity(opacity: 0, child: Text(primaryLabel)),
+                        const SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ],
+                    )
+                  : Text(primaryLabel),
             ),
           ],
         ),

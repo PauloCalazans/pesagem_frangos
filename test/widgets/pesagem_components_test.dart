@@ -159,6 +159,29 @@ void main() {
       expect(find.text('Compartilhar resumo'), findsOneWidget);
     },
   );
+
+  testWidgets('primary action shows progress and is disabled while loading', (
+    tester,
+  ) async {
+    var taps = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          bottomNavigationBar: PesagemBottomActions(
+            secondaryLabel: 'Nova pesagem',
+            primaryLabel: 'Compartilhar resumo',
+            onSecondary: () {},
+            onPrimary: () => taps++,
+            primaryLoading: true,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    await tester.tap(find.text('Compartilhar resumo'), warnIfMissed: false);
+    expect(taps, 0);
+  });
 }
 
 double _contrastRatio(Color first, Color second) {

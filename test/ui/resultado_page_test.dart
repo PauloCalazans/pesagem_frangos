@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -296,29 +299,55 @@ void main() {
     },
   );
 
-  testWidgets('shares the same formatted summary shown on screen', (
-    tester,
-  ) async {
-    String? sharedText;
+  testWidgets('captures and shares one PNG image', (tester) async {
+    final expectedBytes = Uint8List.fromList([137, 80, 78, 71]);
+    Uint8List? sharedBytes;
     await tester.pumpWidget(
       MaterialApp(
         home: ResultadoPage(
           resultado: buildCalculatedResult(),
-          onShare: (text) async => sharedText = text,
+          captureImage: (_, _) async => expectedBytes,
+          onShare: (bytes) async => sharedBytes = bytes,
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Compartilhar resumo'));
+    await tester.pumpAndSettle();
+
+    expect(sharedBytes, same(expectedBytes));
+  });
+
+  testWidgets('blocks repeated sharing while the image is being prepared', (
+    tester,
+  ) async {
+    final capture = Completer<Uint8List>();
+    var captureCalls = 0;
+    var shareCalls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ResultadoPage(
+          resultado: buildCalculatedResult(),
+          captureImage: (_, _) {
+            captureCalls++;
+            return capture.future;
+          },
+          onShare: (_) async => shareCalls++,
         ),
       ),
     );
 
     await tester.tap(find.text('Compartilhar resumo'));
     await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-    expect(sharedText, contains('Peso médio: 892 g'));
-    expect(sharedText, contains('Percentual do padrão: 102,1%'));
-    expect(sharedText, contains('Viabilidade: 97,42%'));
-    expect(sharedText, contains('GMD: 42,5 g'));
-    expect(sharedText, contains('Conversão alimentar: 3,272'));
-    expect(sharedText, contains('Consumo: 28.430 kg'));
-    expect(sharedText, contains('Mortalidade: 258 aves'));
+    await tester.tap(find.text('Compartilhar resumo'), warnIfMissed: false);
+    expect(captureCalls, 1);
+
+    capture.complete(Uint8List.fromList([137, 80, 78, 71]));
+    await tester.pumpAndSettle();
+    expect(shareCalls, 1);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
   testWidgets('keeps long result actions usable on a narrow scaled screen', (
@@ -356,6 +385,7 @@ void main() {
       MaterialApp(
         home: ResultadoPage(
           resultado: buildCalculatedResult(),
+          captureImage: (_, _) async => Uint8List.fromList([137, 80, 78, 71]),
           onShare: (_) => Future<void>.error(StateError('share failed')),
         ),
       ),
@@ -365,5 +395,25 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Não foi possível compartilhar o resumo'), findsOneWidget);
+  });
+
+  testWidgets('reports an image capture failure and keeps the result', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ResultadoPage(
+          resultado: buildCalculatedResult(),
+          captureImage: (_, _) =>
+              Future<Uint8List>.error(StateError('capture failed')),
+          onShare: (_) async => fail('share must not be called'),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Compartilhar resumo'));
+    await tester.pumpAndSettle();
+    expect(find.text('Não foi possível compartilhar o resumo'), findsOneWidget);
+    expect(find.text('892 g'), findsOneWidget);
   });
 }
