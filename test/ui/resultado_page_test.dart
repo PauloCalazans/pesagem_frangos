@@ -152,4 +152,50 @@ void main() {
     expect(sharedText, contains('GMD: 42,5 g'));
     expect(sharedText, contains('Conversão alimentar: 3,272'));
   });
+
+  testWidgets('keeps long result actions usable on a narrow scaled screen', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: ResultadoPage(
+          resultado: buildCalculatedResult(),
+          onShare: (_) async {},
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Nova pesagem'), findsOneWidget);
+    expect(find.text('Compartilhar resumo'), findsOneWidget);
+  });
+
+  testWidgets('reports an injected sharing failure without a platform call', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ResultadoPage(
+          resultado: buildCalculatedResult(),
+          onShare: (_) => Future<void>.error(StateError('share failed')),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Compartilhar resumo'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Não foi possível compartilhar o resumo'), findsOneWidget);
+  });
 }

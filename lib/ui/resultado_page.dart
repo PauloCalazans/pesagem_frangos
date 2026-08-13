@@ -39,6 +39,17 @@ class ResultadoPage extends StatelessWidget {
   final PesoMedio resultado;
   final ShareText? onShare;
 
+  Future<void> _share(BuildContext context) async {
+    try {
+      await (onShare ?? shareTextNative)(buildResumoPesagem(resultado));
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível compartilhar o resumo')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final r = resultado;
@@ -124,8 +135,7 @@ class ResultadoPage extends StatelessWidget {
         secondaryLabel: 'Nova pesagem',
         primaryLabel: 'Compartilhar resumo',
         onSecondary: () => Navigator.pop(context, ResultadoAction.novaPesagem),
-        onPrimary: () =>
-            (onShare ?? shareTextNative)(buildResumoPesagem(resultado)),
+        onPrimary: () => _share(context),
       ),
     );
   }

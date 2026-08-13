@@ -19,8 +19,11 @@ class PesagemBottomActions extends StatelessWidget {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: OverflowBar(
+          alignment: MainAxisAlignment.spaceBetween,
+          spacing: 12,
+          overflowAlignment: OverflowBarAlignment.center,
+          overflowSpacing: 8,
           children: [
             TextButton(
               onPressed: onSecondary,
