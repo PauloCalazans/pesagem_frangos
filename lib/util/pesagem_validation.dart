@@ -51,15 +51,20 @@ class PesagemValidation {
   }
 
   static String? validateBalancas(String? value) {
-    final lines = (value ?? '').split('\n').map((line) => line.trim());
+    final lines = (value ?? '')
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
     if (lines.any((line) => line.isNotEmpty && int.tryParse(line) == null)) {
       return 'Use somente números, uma pesagem por linha';
     }
-    final valid = lines
-        .map(int.tryParse)
-        .whereType<int>()
-        .where((weight) => weight > 0);
+    final readings = lines.map(int.parse).toList();
+    final valid = readings.where((weight) => weight > 0);
     if (valid.isEmpty) return 'Informe ao menos uma pesagem válida';
+    if (readings.any((weight) => weight <= 0)) {
+      return 'Cada pesagem deve ser maior que zero';
+    }
     return null;
   }
 }

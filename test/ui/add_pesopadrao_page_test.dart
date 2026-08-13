@@ -83,9 +83,24 @@ void main() {
     expect(mPrefs.getStringList('padraoMacho'), <String>['42', '58']);
   });
 
-  testWidgets('removes the exact selected standard instead of the last row', (
-    tester,
-  ) async {
+  testWidgets('hides deletion for an intermediate age', (tester) async {
+    await pumpStandardsPage(
+      tester,
+      initialValues: {
+        'padraoMacho': <String>['42', '56', '70'],
+        'padraoFemea': <String>['40', '54', '68'],
+      },
+    );
+
+    await tester.tap(find.byTooltip('Ações da idade 1'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Editar'), findsOneWidget);
+    expect(find.text('Excluir'), findsNothing);
+    expect(mPrefs.getStringList('padraoMacho'), <String>['42', '56', '70']);
+  });
+
+  testWidgets('removes only the standard for the last age', (tester) async {
     await pumpStandardsPage(
       tester,
       initialValues: {
@@ -94,16 +109,16 @@ void main() {
       },
     );
 
-    await tester.tap(find.byTooltip('Ações da idade 0'));
+    await tester.tap(find.byTooltip('Ações da idade 1'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Excluir'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Excluir'));
     await tester.pumpAndSettle();
 
-    expect(find.text('42 g'), findsNothing);
-    expect(find.text('56 g'), findsOneWidget);
-    expect(mPrefs.getStringList('padraoMacho'), <String>['56']);
+    expect(find.text('42 g'), findsOneWidget);
+    expect(find.text('56 g'), findsNothing);
+    expect(mPrefs.getStringList('padraoMacho'), <String>['42']);
   });
 
   testWidgets('rejects deletion for the derived mixed standard', (
@@ -118,7 +133,7 @@ void main() {
     );
     await selectSexo(tester, 'Misto');
 
-    await tester.tap(find.byTooltip('Ações da idade 0'));
+    await tester.tap(find.byTooltip('Ações da idade 1'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Excluir'));
     await tester.pumpAndSettle();

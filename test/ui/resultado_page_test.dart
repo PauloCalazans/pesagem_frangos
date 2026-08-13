@@ -21,6 +21,20 @@ PesoMedio buildCalculatedResult() {
   )..calcular();
 }
 
+PesoMedio buildLongCalculatedResult() {
+  return PesoMedio(
+    idade: 8_000_000_000_000_000_000,
+    avesPesadas: 8_000_000_000_000_000_000,
+    avesAlojadas: 8_500_000_000_000_000_000,
+    pesoPadrao: 1,
+    racaoRecebida: 8_000_000_000_000_000_000,
+    estoqueRacao: 1_000_000_000_000_000_000,
+    tara: 500_000_000_000_000_000,
+    balancas: const ['8500000000000000000'],
+    mortalidade: 500_000_000_000_000_000,
+  )..calcular();
+}
+
 Finder _input(String key) => find.descendant(
   of: find.byKey(Key(key)),
   matching: find.byType(EditableText),
@@ -69,6 +83,25 @@ void main() {
     expect(find.textContaining('2,1% acima'), findsNothing);
   });
 
+  testWidgets('shows consumption and mortality as efficiency metrics', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: ResultadoPage(
+          resultado: buildCalculatedResult(),
+          onShare: (_) async {},
+        ),
+      ),
+    );
+
+    expect(find.text('Consumo'), findsOneWidget);
+    expect(find.text('28.430 kg'), findsOneWidget);
+    expect(find.text('Mortalidade'), findsOneWidget);
+    expect(find.text('258 aves'), findsOneWidget);
+  });
+
   testWidgets('expands weighing audit details', (tester) async {
     final semantics = tester.ensureSemantics();
     await tester.pumpWidget(
@@ -98,6 +131,12 @@ void main() {
     expect(find.text('Desconto da tara'), findsOneWidget);
     expect(find.text('Média das balanças'), findsOneWidget);
     expect(find.text('Balanças consideradas'), findsOneWidget);
+    expect(find.text('Idade'), findsOneWidget);
+    expect(find.text('21 dias'), findsOneWidget);
+    expect(find.text('Tara unitária'), findsOneWidget);
+    expect(find.text('250 g'), findsOneWidget);
+    expect(find.text('Aves pesadas'), findsOneWidget);
+    expect(find.text('120 aves'), findsOneWidget);
     semantics.dispose();
   });
 
@@ -149,6 +188,44 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('102,1%'), findsOneWidget);
   });
+
+  testWidgets(
+    'expanded audit handles enlarged text and long values without overflow',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(1.5)),
+            child: child!,
+          ),
+          home: ResultadoPage(
+            resultado: buildLongCalculatedResult(),
+            onShare: (_) async {},
+          ),
+        ),
+      );
+
+      await tester.scrollUntilVisible(
+        find.text('Detalhes da pesagem'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Detalhes da pesagem'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tara unitária'), findsOneWidget);
+      expect(find.text('8.000.000.000.000.000.000 aves'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('system back preserves the entered age in HomePage', (
     tester,
@@ -208,6 +285,8 @@ void main() {
     expect(sharedText, contains('Viabilidade: 97,42%'));
     expect(sharedText, contains('GMD: 42,5 g'));
     expect(sharedText, contains('Conversão alimentar: 3,272'));
+    expect(sharedText, contains('Consumo: 28.430 kg'));
+    expect(sharedText, contains('Mortalidade: 258 aves'));
   });
 
   testWidgets('keeps long result actions usable on a narrow scaled screen', (

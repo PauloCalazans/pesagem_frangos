@@ -30,6 +30,8 @@ String buildResumoPesagem(PesoMedio resultado) {
     'Viabilidade: ${Util.formatDecimal(resultado.viabilidade, decimals: 2)}%',
     'GMD: ${Util.formatDecimal(resultado.gmd)} g',
     'Conversão alimentar: ${Util.formatDecimal(resultado.ca, decimals: 3)}',
+    'Consumo: ${Util.formatInteger(resultado.consumo)} kg',
+    'Mortalidade: ${Util.formatInteger(resultado.mortalidade)} aves',
   ].join('\n');
 }
 
@@ -69,27 +71,64 @@ class ResultadoPage extends StatelessWidget {
             const SizedBox(height: 12),
             ViabilityCard(viabilidade: r.viabilidade, avesVivas: r.avesVivas),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: MetricCard(
-                    label: 'GMD',
-                    value: '${Util.formatDecimal(r.gmd)} g',
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: MetricCard(
-                    label: 'Conversão alimentar',
-                    value: Util.formatDecimal(r.ca, decimals: 3),
-                  ),
-                ),
-              ],
+            Text('Eficiência', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const spacing = 12.0;
+                final cardWidth = (constraints.maxWidth - spacing) / 2;
+                return Wrap(
+                  spacing: spacing,
+                  runSpacing: spacing,
+                  children: [
+                    SizedBox(
+                      width: cardWidth,
+                      child: MetricCard(
+                        label: 'GMD',
+                        value: '${Util.formatDecimal(r.gmd)} g',
+                      ),
+                    ),
+                    SizedBox(
+                      width: cardWidth,
+                      child: MetricCard(
+                        label: 'Conversão alimentar',
+                        value: Util.formatDecimal(r.ca, decimals: 3),
+                      ),
+                    ),
+                    SizedBox(
+                      width: cardWidth,
+                      child: MetricCard(
+                        label: 'Consumo',
+                        value: '${Util.formatInteger(r.consumo)} kg',
+                      ),
+                    ),
+                    SizedBox(
+                      width: cardWidth,
+                      child: MetricCard(
+                        label: 'Mortalidade',
+                        value: '${Util.formatInteger(r.mortalidade)} aves',
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 12),
             ResultDetailsSection(
               title: 'Detalhes da pesagem',
               children: [
+                ResultLine(
+                  label: 'Idade',
+                  value: '${Util.formatInteger(r.idade)} dias',
+                ),
+                ResultLine(
+                  label: 'Tara unitária',
+                  value: '${Util.formatInteger(r.tara)} g',
+                ),
+                ResultLine(
+                  label: 'Aves pesadas',
+                  value: '${Util.formatInteger(r.avesPesadas)} aves',
+                ),
                 ResultLine(
                   label: 'Peso total',
                   value: '${Util.formatInteger(r.pesoTotal)} g',

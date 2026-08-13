@@ -275,7 +275,9 @@ void main() {
     );
   });
 
-  testWidgets('rejects an invalid balance line', (tester) async {
+  testWidgets('filters letters from balance input instead of warning', (
+    tester,
+  ) async {
     await pumpPesagemApp(tester);
     await fillValidLote(tester);
     await tester.tap(find.text('Continuar'));
@@ -284,13 +286,21 @@ void main() {
     await tester.tap(find.text('Continuar'));
     await tester.pumpAndSettle();
     await tester.enterText(input('balancasField'), '1200\ntexto');
-    await tester.tap(find.text('Calcular'));
     await tester.pump();
 
     expect(
-      find.text('Use somente números, uma pesagem por linha'),
-      findsOneWidget,
+      tester.widget<EditableText>(input('balancasField')).controller.text,
+      '1200\n',
     );
+    expect(
+      find.text('Use somente números, uma pesagem por linha'),
+      findsNothing,
+    );
+
+    await tester.tap(find.text('Calcular'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Resultado'), findsOneWidget);
   });
 
   testWidgets('shows the result page and preserves form data on back', (

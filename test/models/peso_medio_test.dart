@@ -61,6 +61,44 @@ void main() {
     expect(buildPesoMedio(mortalidade: 0).viabilidade, 100);
   });
 
+  test('calcula percentual do padrão abaixo de 100%', () {
+    final resultado = buildPesoMedio(
+      balancas: const ['25000', '25000', '25000', '25000'],
+    );
+
+    expect(resultado.porcentagem, closeTo(94.393, 0.001));
+    expect(resultado.porcentagem, lessThan(100));
+  });
+
+  test('calcula percentual do padrão exatamente em 100%', () {
+    final resultado = buildPesoMedio(
+      balancas: const ['26470', '26470', '26470', '26470'],
+    );
+
+    expect(resultado.porcentagem, closeTo(100, 0.001));
+  });
+
+  test('calcula viabilidade isolada de 0% sem enfraquecer calcular', () {
+    final resultado = PesoMedio(
+      idade: 21,
+      avesPesadas: 120,
+      avesAlojadas: 10000,
+      pesoPadrao: 874,
+      racaoRecebida: 30000,
+      estoqueRacao: 1570,
+      tara: 250,
+      balancas: const ['27010'],
+      mortalidade: 10000,
+    );
+
+    resultado.calcularAvesVivas();
+    resultado.calcularViabilidade();
+
+    expect(resultado.avesVivas, 0);
+    expect(resultado.viabilidade, 0);
+    expect(resultado.viabilidade.isFinite, isTrue);
+  });
+
   test('rejeita valores de domínio não positivos antes de calcular', () {
     for (final resultado in [
       () => buildPesoMedio(idade: 0),

@@ -63,6 +63,21 @@ void main() {
         PesagemValidation.validateBalancas('1200\ntexto'),
         'Use somente números, uma pesagem por linha',
       );
+      expect(
+        PesagemValidation.validateBalancas('1200\n0\ntexto'),
+        'Use somente números, uma pesagem por linha',
+      );
+    });
+
+    test('balanças rejeitam cada linha numérica não positiva', () {
+      expect(
+        PesagemValidation.validateBalancas('1200\n0'),
+        'Cada pesagem deve ser maior que zero',
+      );
+      expect(
+        PesagemValidation.validateBalancas('1200\n-5'),
+        'Cada pesagem deve ser maior que zero',
+      );
     });
 
     test('balanças exigem ao menos uma leitura positiva', () {

@@ -110,7 +110,10 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
   }
 
   Future<void> _removePeso(int index) async {
-    if (_isSaving || _isDerivedStandard || index >= _listPesoPadrao.length) {
+    if (_isSaving ||
+        _isDerivedStandard ||
+        index < 0 ||
+        index != _listPesoPadrao.length - 1) {
       return;
     }
     final updatedList = List<String>.from(_listPesoPadrao)..removeAt(index);
@@ -119,6 +122,10 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
 
   void _handleRowAction(_PadraoAction action, int index) {
     if (_isSaving) return;
+    if (action == _PadraoAction.excluir &&
+        index != _listPesoPadrao.length - 1) {
+      return;
+    }
     if (_isDerivedStandard) {
       _showMixedStandardMessage();
       return;
@@ -293,21 +300,22 @@ class _AddPesopadraoPageState extends State<AddPesopadraoPage> {
                           onSelected: _isSaving
                               ? null
                               : (action) => _handleRowAction(action, index),
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(
+                          itemBuilder: (_) => [
+                            const PopupMenuItem(
                               value: _PadraoAction.editar,
                               child: ListTile(
                                 leading: Icon(Icons.edit_outlined),
                                 title: Text('Editar'),
                               ),
                             ),
-                            PopupMenuItem(
-                              value: _PadraoAction.excluir,
-                              child: ListTile(
-                                leading: Icon(Icons.delete_outline),
-                                title: Text('Excluir'),
+                            if (index == _listPesoPadrao.length - 1)
+                              const PopupMenuItem(
+                                value: _PadraoAction.excluir,
+                                child: ListTile(
+                                  leading: Icon(Icons.delete_outline),
+                                  title: Text('Excluir'),
+                                ),
                               ),
-                            ),
                           ],
                         ),
                       ),
