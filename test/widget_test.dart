@@ -10,8 +10,9 @@ void main() {
     await tester.pumpWidget(MyApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Pesagem'), findsOneWidget);
+    expect(find.text('Nova pesagem'), findsOneWidget);
+    expect(find.text('Dados do lote · etapa 1 de 3'), findsOneWidget);
     expect(find.text('Sexo'), findsOneWidget);
-    expect(find.text('AVANÇAR'), findsOneWidget);
+    expect(find.text('Continuar'), findsOneWidget);
   });
 }
