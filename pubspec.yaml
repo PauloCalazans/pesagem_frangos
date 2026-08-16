@@ -1,7 +1,7 @@
 name: pesagem_frangos
 description: Calcular o Peso Médio a partir das balanças informadas
 
-version: 1.0.1+2
+version: 1.1.0+3
 
 environment:
   sdk: ^3.12.2
