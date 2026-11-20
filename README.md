@@ -1,16 +1,30 @@
-# pesagem_frangos
+# Pesagem de frangos
 
-Calcular o Peso Médio a partir das balanças informadas.
+Aplicativo Flutter para calcular o peso médio de um lote de frangos com base nas leituras das balanças.
 
-## Getting Started
+## Recursos
 
-This project is a starting point for a Flutter application.
+- Registra dados do lote, alimentação, tara e leituras das balanças.
+- Calcula peso médio, ganho médio diário, conversão alimentar e viabilidade do lote.
+- Permite manter padrões de peso por idade e sexo.
+- Exibe e compartilha o resumo dos resultados.
 
-A few resources to get you started if this is your first Flutter project:
+## Requisitos
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+- Flutter instalado (Dart SDK `^3.12.2`).
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Executar
+
+Na raiz do projeto, instale as dependências e inicie o aplicativo:
+
+```bash
+flutter pub get
+flutter run
+```
+
+## Verificar
+
+```bash
+dart analyze
+flutter test
+```

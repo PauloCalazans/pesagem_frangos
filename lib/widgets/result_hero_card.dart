@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:pesagem_frangos/util/util.dart';
 
 class ResultHeroCard extends StatelessWidget {

@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    hide GlobalMaterialLocalizations;
 import 'package:pesagem_frangos/models/peso_padrao.dart';
 import 'package:pesagem_frangos/theme/app_theme.dart';
 import 'package:pesagem_frangos/ui/home_page.dart';
